@@ -839,8 +839,14 @@
         .replace(/\bStraße\b/gi, 'Str.');
       var gewerk = document.getElementById('gen-gewerk').value.trim();
 
-      var roh = [AKTUELLE_PROJEKT_NR, ort, kunde, gewerk].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
-      var gekuerzt = roh.substring(0, 21).trim();
+     var roh = [AKTUELLE_PROJEKT_NR, ort, kunde, gewerk]
+        .filter(Boolean)
+        .join("_")
+        .replace(/\s+/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_|_$/g, "")
+        .trim();
+      var gekuerzt = roh.substring(0, 21).replace(/_$/, "").trim();
       document.getElementById('gen-vorschau').innerText = gekuerzt;
       var cnt = document.getElementById('gen-counter');
       cnt.innerText = gekuerzt.length + ' / 21 Zeichen' + (roh.length > 21 ? ' (gekürzt)' : '');

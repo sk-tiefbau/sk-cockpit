@@ -201,4 +201,1449 @@
           <div class="sub" id="kpi-box-sub">Standzeit > 5 Tage: 0</div>
         </div>
         <div class="kpi"><div class="lbl">Produktiv-Std.</div><div class="val" id="kpi-std">–</div><div class="sub">Monat gesamt</div></div>
-        <div class="kpi"><div class="lbl">Urlaubsanträge</div><div class="val" id
+        <div class="kpi"><div class="lbl">Urlaubsanträge</div><div class="val" id="kpi-url">–</div><div class="sub">offen zur Prüfung</div></div>
+        <div class="kpi red"><div class="lbl">Kalle Tic</div><div class="val" id="kpi-tic">–</div><div class="sub">offene Aufgaben</div></div>
+      </div>
+
+      <div class="dash-grid">
+        <div class="card">
+          <div class="card-head"><h2>🥧 Stunden nach Baustelle</h2></div>
+          <div class="donut-wrap" id="chart-baustellen">Lade Grafik...</div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>🥧 Arbeitszeit-Aufteilung</h2></div>
+          <div class="donut-wrap" id="chart-zeit">Lade Grafik...</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>👷 Wer macht was? (Heute & Status)</h2></div>
+        <div id="kalender-heute-box" style="margin-bottom:12px;"></div>
+        <div class="team-grid" id="wer-macht-was"></div>
+      </div>
+    </div>
+
+    <!-- TAB: 2-WOCHEN-EINSATZPLANUNG, LOGISTIK & ARBEITSAUFTRÄGE -->
+    <div id="tab-einsatzplan" class="hidden">
+      <!-- AV-VORLAGEN AUS 07_KALKULATION & 02_BERICHTE -->
+      <div class="card" style="border-top: 4px solid #2563eb;">
+        <div class="card-head">
+          <h2>📐 Arbeitsvorbereitung (AV) – Kalkulierte Aufträge & Berichte übernehmen</h2>
+          <span style="font-size:12px; color:#64748b;">Direkt aus 01_Ausfuehrung → 07_Kalkulation & 02_Berichte</span>
+        </div>
+        <div id="av-vorlagen-liste" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:10px;"></div>
+      </div>
+
+      <div class="card" style="border-top: 4px solid #f59e0b;">
+        <div class="card-head">
+          <h2>☑️ 1. Projekte für die nächsten 14 Tage auswählen</h2>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <a id="lnk-einsatz-sheet" class="btn btn-gray" href="#" target="_blank">📊 Planungs-Sheet</a>
+            <button class="btn btn-green" onclick="auswahlSpeichern()">💾 Auswahl speichern</button>
+            <button class="btn btn-amber" onclick="wocheAutoPlanen()">🤖 Woche automatisch planen</button>
+          </div>
+        </div>
+        <p style="font-size:13px; color:#475569; margin-top:0;">Hake hier die <b>Projekte</b> an und tippe auf <b>„🤖 Woche automatisch planen“</b> – Kalle plant Kolonnen, LKW-Touren & Wetter-AV und schickt dir eine Rückfrage in <b>00_Planungsaufgaben</b>:</p>
+        <div id="projekt-auswahl-liste" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:8px;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>📋 2. Tages-Arbeitsaufträge, Wetter-AV & LKW-Logistik (06:30-Uhr-Freigabe → Kalender & Kalle-Box)</h2>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button class="btn btn-gray" onclick="kalleRegelBeibringen()">🧠 Kalle Regel beibringen</button>
+            <button class="btn" onclick="oeffneAuftragModal(0, '', '', 'Kolonne 1 (Philipp/Frank)', '', '', 'Transporter: ')">➕ Kolonnen-Auftrag</button>
+            <button class="btn btn-indigo" onclick="oeffneLogistikModal()">🚛 + Logistik / LKW-Tour</button>
+            <button class="btn btn-green" onclick="auftraegeAnChatPosten()">✅ Geprüft & für 06:30 Uhr freigeben</button>
+          </div>
+        </div>
+        <div class="table-wrap"><table id="tbl-einsatzplan"></table></div>
+      </div>
+    </div>
+
+    <!-- MODAL 1: KOLONNEN-ARBEITSAUFTRAG & AV -->
+    <div id="auftrag-modal" class="hidden" style="position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:200; display:flex; align-items:center; justify-content:center; padding:12px;">
+      <div style="background:#fff; border-radius:12px; max-width:620px; width:100%; padding:18px; box-shadow:0 12px 32px rgba(0,0,0,0.3); max-height:92vh; overflow-y:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:12px;">
+          <h3 id="modal-titel" style="margin:0; font-size:16px;">✏️ Arbeitsauftrag & AV bearbeiten</h3>
+          <button class="btn btn-gray" style="padding:4px 10px; min-height:30px;" onclick="schliesseAuftragModal()">✖</button>
+        </div>
+
+        <input type="hidden" id="mod-row" value="0">
+
+        <div style="margin-bottom:10px;">
+          <label style="display:block; font-size:12px; font-weight:bold; color:#475569; margin-bottom:4px;">Schnellwahl Einsatztag (nächste Woche):</label>
+          <div id="mod-tage-btns" style="display:flex; gap:6px; flex-wrap:wrap;"></div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 100px; gap:10px; margin-bottom:10px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:bold; color:#475569; margin-bottom:4px;">Datum (TT.MM.JJJJ)</label>
+            <input type="text" id="mod-datum" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:bold; color:#475569; margin-bottom:4px;">Tag</label>
+            <input type="text" id="mod-tag" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px;">
+          </div>
+        </div>
+
+        <div style="margin-bottom:10px;">
+          <label style="display:block; font-size:12px; font-weight:bold; color:#475569; margin-bottom:4px;">Kolonne / Einheit (bestimmt den Google Kalender)</label>
+          <select id="mod-kolonne" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px; background:#fff;">
+            <option value="Kolonne 1 (Philipp/Frank)">Kolonne 1 (Philipp/Frank) → Kalender Team 1</option>
+            <option value="Kolonne 2 (Jürgen/Thomas)">Kolonne 2 (Jürgen/Thomas) → Kalender Team 2</option>
+            <option value="Transport: 3-Achs Volvo (Tilo Keller)">Transport: 3-Achs Volvo (Tilo Keller) → Kalender Transport</option>
+            <option value="Transport: 14t MAN">Transport: 14t MAN → Kalender Transport</option>
+            <option value="Transport: Multicar">Transport: Multicar → Kalender Transport</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom:10px;">
+          <label style="display:block; font-size:12px; font-weight:bold; color:#475569; margin-bottom:4px;">Baustelle / Projekt (zieht automatisch LV & Material)</label>
+          <input type="text" id="mod-baustelle" list="dl-baustellen" onchange="baustelleGewaehltAutoLv()" placeholder="Projekt auswählen oder eintippen..." style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px;">
+          <datalist id="dl-baustellen"></datalist>
+        </div>
+
+        <div style="margin-bottom:10px;">
+          <label style="display:block; font-size:12px; font-weight:bold; color:#475569; margin-bottom:4px;">Kurzer Arbeitsauftrag (erscheint im Kalender & Chat inkl. Wetter-AV)</label>
+          <textarea id="mod-auftrag" rows="3" placeholder="z. B. Baustelle einrichten, Oberboden abtragen, Planum herstellen..." style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px;"></textarea>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:12px; font-weight:bold; color:#475569; margin-bottom:4px;">Arbeitsvorbereitung: Transporter-Werkzeug, Maschinen & Material-Ladeliste</label>
+          <textarea id="mod-werkzeug" rows="3" placeholder="z. B. Minibagger, Rüttelplatte, Laser, 12 t FSS 0/32 abrufen..." style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px;"></textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button class="btn btn-gray" onclick="schliesseAuftragModal()">Abbrechen</button>
+          <button class="btn btn-green" onclick="speichereAuftragAusModal()">💾 Speichern</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 2: LOGISTIK / LKW-TOUR (ZENTRALE <-> KALENDER "TRANSPORT" <-> KALLE-BOX) -->
+    <div id="logistik-modal" class="hidden" style="position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:205; display:flex; align-items:center; justify-content:center; padding:12px;">
+      <div style="background:#fff; border-radius:12px; max-width:620px; width:100%; padding:18px; box-shadow:0 12px 32px rgba(0,0,0,0.3); max-height:92vh; overflow-y:auto; border-top: 5px solid #4338ca;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:12px;">
+          <h3 style="margin:0; font-size:16px; color:#1e1b4b;">🚛 Logistik- / LKW-Tour planen (→ Kalender „Transport“ & Kalle-Box)</h3>
+          <button class="btn btn-gray" style="padding:4px 10px; min-height:30px;" onclick="schliesseLogistikModal()">✖</button>
+        </div>
+
+        <div style="margin-bottom:10px;">
+          <label style="display:block; font-size:12px; font-weight:bold; color:#475569; margin-bottom:4px;">Schnellwahl Einsatztag:</label>
+          <div id="log-tage-btns" style="display:flex; gap:6px; flex-wrap:wrap;"></div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 90px 1.2fr; gap:10px; margin-bottom:10px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:bold; color:#475569; margin-bottom:4px;">Datum (TT.MM.JJJJ)</label>
+            <input type="text" id="log-datum" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:bold; color:#475569; margin-bottom:4px;">Tag</label>
+            <input type="text" id="log-tag" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:bold; color:#475569; margin-bottom:4px;">Zeitfenster</label>
+            <select id="log-zeitfenster" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px; background:#fff;">
+              <option value="07:30 Uhr (Morgens)">07:30 Uhr (Morgens)</option>
+              <option value="10:00 Uhr (Vormittag)">10:00 Uhr (Vormittag)</option>
+              <option value="13:00 Uhr (Nachmittag)">13:00 Uhr (Nachmittag)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:bold; color:#475569; margin-bottom:4px;">Fahrzeug (Konfliktprüfung aktiv)</label>
+            <select id="log-fahrzeug" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px; background:#fff;">
+              <option value="3-Achs Volvo">3-Achs Volvo (Abrollkipper / 10–40 m³)</option>
+              <option value="14t MAN">14t MAN (2-Achser / 3,5–7,5 m³)</option>
+              <option value="Multicar">Multicar (1,0–2,5 m³)</option>
+              <option value="Transporter + Anhänger">Transporter + Anhänger</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:bold; color:#475569; margin-bottom:4px;">Fahrer</label>
+            <select id="log-fahrer" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px; background:#fff;">
+              <option value="Tilo Keller">Tilo Keller</option>
+              <option value="Philipp Sturm">Philipp Sturm</option>
+              <option value="Frank Geißler">Frank Geißler</option>
+              <option value="Jürgen Gerhardt">Jürgen Gerhardt</option>
+              <option value="Thomas Schreiber">Thomas Schreiber</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-bottom:10px;">
+          <label style="display:block; font-size:12px; font-weight:bold; color:#475569; margin-bottom:4px;">Ziel-Baustelle / Projekt *</label>
+          <input type="text" id="log-baustelle" list="dl-baustellen" placeholder="z. B. 26-083 Pegau ..." style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px;">
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:bold; color:#475569; margin-bottom:4px;">Ladung / Container-m³ *</label>
+            <input type="text" id="log-ladung" placeholder="z. B. 10 m³ Container Bauschutt / 14 t FSS 0/32" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:bold; color:#475569; margin-bottom:4px;">Strecke (Von → Nach)</label>
+            <input type="text" id="log-strecke" value="Bauhof Pegau → Baustelle" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px;">
+          </div>
+        </div>
+
+        <div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:8px; padding:10px 12px; margin-bottom:14px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:#1e1b4b; font-weight:bold;">
+            <input type="checkbox" id="log-sofort-kalender" checked style="width:18px; height:18px; accent-color:#4338ca;">
+            Sofort in Google Kalender „Transport“ eintragen (erscheint direkt in Kalle-Box auf dem Handy)
+          </label>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button class="btn btn-gray" onclick="schliesseLogistikModal()">Abbrechen</button>
+          <button class="btn btn-indigo" onclick="speichereLogistikTourAusModal()">🚛 Tour speichern & an Transport übergeben</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: CONTAINERDIENST & KALLE-BOX -->
+    <div id="tab-container" class="card hidden" style="border-top: 4px solid #f59e0b;">
+      <div class="card-head">
+        <h2>📦 Containerdienst, Schüttgüter & Online-Bestellungen (Kalle-Box)</h2>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <a id="lnk-box-webapp" class="btn btn-green hidden" href="#" target="_blank">🌐 Online-Bestellformular öffnen</a>
+          <button id="btn-box-iframe" class="btn hidden" onclick="kopiereIframeCode()">📋 Website-Einbettungscode kopieren</button>
+          <a id="lnk-box-sheet" class="btn btn-gray" href="#" target="_blank">📊 Kalle_Box_Log</a>
+        </div>
+      </div>
+      <p style="font-size:13px; color:#475569; margin-top:0;">
+        Übersicht aller gestellten Container, Online-Bestellungen & Schüttgutlieferungen (Preisliste ab 01.12.2026 · <b>5 Kalendertage standzeitfrei</b>, ab Tag 6: 3,50 € netto/Tag):
+      </p>
+      <div class="table-wrap"><table id="tbl-container"></table></div>
+    </div>
+
+    <!-- TAB 1: RECHNUNGSAUSGANGSBUCH & KALLE KASSE RECHNUNGSLAUF -->
+    <div id="tab-rechnungen" class="hidden">
+      <div class="card" style="border-top: 4px solid #2563eb;">
+        <div class="card-head">
+          <h2>🧾 Aufmaß- & Rechnungslauf starten (Kalle Kasse · inkl. Soll-Ist & § 13b UStG)</h2>
+          <button class="btn" onclick="kalleKasseVorschauLaden()">🔍 Leistungsstand, Fotos & Soll-Ist prüfen</button>
+        </div>
+        <div class="kasse-grid">
+          <div>
+            <label>Projekt auswählen (01_Ausfuehrung)</label>
+            <select id="kasse-projekt"></select>
+          </div>
+          <div>
+            <label>Rechnungsart</label>
+            <select id="kasse-rechnungsart">
+              <option value="">Automatisch (nächster Abschlag)</option>
+              <option value="1. Abschlagsrechnung">1. Abschlagsrechnung</option>
+              <option value="2. Abschlagsrechnung">2. Abschlagsrechnung</option>
+              <option value="3. Abschlagsrechnung">3. Abschlagsrechnung</option>
+              <option value="Schlussrechnung">Schlussrechnung (→ verschiebt nach 99_Abgerechnet)</option>
+              <option value="Rechnung">Einzelrechnung</option>
+            </select>
+          </div>
+          <div>
+            <label>Steuerregelung (MwSt.)</label>
+            <select id="kasse-steuerart">
+              <option value="19">Regelbesteuerung (19 % MwSt.)</option>
+              <option value="13b">§ 13b UStG (0 % – ohne Mehrwertsteuer)</option>
+            </select>
+          </div>
+          <div>
+            <label>Soll-Std. (optional)</label>
+            <input type="text" id="kasse-soll-std" placeholder="z. B. 120">
+          </div>
+          <div>
+            <label>Soll-Mat. € (optional)</label>
+            <input type="text" id="kasse-soll-mat" placeholder="z. B. 4500">
+          </div>
+        </div>
+
+        <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-amber" onclick="kalleKasseLaufStarten(true)">📊 Nur Soll-Ist-Vergleich erstellen</button>
+          <button class="btn btn-green" onclick="kalleKasseLaufStarten(false)">🚀 Aufmaß & Rechnungslauf starten</button>
+        </div>
+
+        <div id="kasse-ergebnis-box" class="hidden" style="margin-top:12px; background:#f0fdf4; border:1px solid #bbf7d0; padding:12px 14px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div id="kasse-ergebnis-text" style="font-size:13.5px; font-weight:bold;"></div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <a id="kasse-lnk-sheet" class="btn btn-gray" href="#" target="_blank">📊 Master-Sheet (Soll-Ist & Aufmaß)</a>
+            <a id="kasse-lnk-pdf" class="btn hidden" href="#" target="_blank">📄 Fertige Rechnung (PDF)</a>
+          </div>
+        </div>
+
+        <div id="kasse-vorschau-box" class="hidden" style="margin-top:14px; border-top:1px solid #e2e8f0; padding-top:14px;">
+          <div class="dash-grid">
+            <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:12px;">
+              <h3 style="margin:0 0 8px 0; font-size:14.5px;">📊 Soll-Ist-Vergleich (Nachkalkulation)</h3>
+              <div id="kasse-sollist-html" style="font-size:13px; line-height:1.6;"></div>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:12px;">
+              <h3 style="margin:0 0 8px 0; font-size:14.5px;">💶 Bisherige Rechnungen & Abschläge</h3>
+              <div id="kasse-abschlaege-html" style="font-size:13px; line-height:1.6;"></div>
+            </div>
+          </div>
+          <div class="dash-grid">
+            <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:12px;">
+              <h3 style="margin:0 0 8px 0; font-size:14.5px;">📋 Leistungsstand aus Tagesberichten & LV</h3>
+              <div id="kasse-berichte-html" style="font-size:12.5px; max-height:220px; overflow-y:auto;"></div>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:12px;">
+              <h3 style="margin:0 0 8px 0; font-size:14.5px;">📸 Baustellenfotos zur Aufmaßprüfung</h3>
+              <div id="kasse-fotos-html" style="font-size:12.5px; display:flex; flex-wrap:wrap; gap:6px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>💶 Rechnungsausgangsbuch (2026)</h2>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button class="btn btn-amber" onclick="rechnungsNummerAnpassen()">🔢 RE-Nr. ändern</button>
+            <a id="lnk-rechnungsbuch" class="btn btn-gray" href="#" target="_blank">📊 Sheet öffnen</a>
+          </div>
+        </div>
+        <div class="table-wrap"><table id="tbl-rechnungen"></table></div>
+      </div>
+    </div>
+
+    <!-- TAB 2: AUFTRÄGE -->
+    <div id="tab-auftraege" class="card hidden">
+      <div class="card-head">
+        <h2>📄 Angebote & Rechnungen versenden</h2>
+        <a id="lnk-uebergabe" class="btn btn-gray" href="#" target="_blank">📊 Auftrags-Zentrale</a>
+      </div>
+      <div class="table-wrap"><table id="tbl-auftraege"></table></div>
+    </div>
+
+    <!-- TAB 3: PERSONAL -->
+    <div id="tab-personal" class="card hidden">
+      <div class="card-head">
+        <h2>⏱️ Stundenliste, VMA & Steuerbüro</h2>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <a id="lnk-personal" class="btn btn-gray" href="#" target="_blank">📊 Stunden-Sheet</a>
+          <button class="btn btn-green" onclick="steuerbueroSenden()">📧 An Steuerbüro</button>
+        </div>
+      </div>
+      <div class="subtabs">
+        <div class="subtab active" onclick="zeigeSubTab('steuer', this)">1. Steuerbüro</div>
+        <div class="subtab" onclick="zeigeSubTab('tagesstd', this)">2. Einzelstunden</div>
+        <div class="subtab" onclick="zeigeSubTab('vma', this)">3. VMA & Fahrtkosten</div>
+      </div>
+
+      <div id="sub-steuer" class="table-wrap"><table id="tbl-personal"></table></div>
+      <div id="sub-tagesstd" class="table-wrap hidden"><table id="tbl-tagesstd"></table></div>
+      <div id="sub-vma" class="table-wrap hidden"><table id="tbl-vma"></table></div>
+    </div>
+
+    <!-- TAB 4: URLAUB -->
+    <div id="tab-urlaub" class="card hidden">
+      <div class="card-head">
+        <h2>🏖️ Urlaubs- & Krankheitsanträge</h2>
+        <a id="lnk-urlaub" class="btn btn-gray" href="#" target="_blank">📊 Urlaubs-Tabelle</a>
+      </div>
+      <div class="table-wrap"><table id="tbl-urlaub"></table></div>
+    </div>
+
+    <!-- TAB 5: STEMPELUHR & TAGESKONTROLLE -->
+    <div id="tab-stempel" class="card hidden">
+      <div class="card-head">
+        <h2>📍 Live-GPS-Stempeluhr & Tageskontrolle</h2>
+      </div>
+      <h3 style="font-size:15px;">📍 Live-GPS-Stempelzeiten</h3>
+      <div class="table-wrap" style="margin-bottom:20px;"><table id="tbl-stempel"></table></div>
+      <h3 style="font-size:15px;">📋 Tägliche Baustellenkontrolle</h3>
+      <div class="table-wrap"><table id="tbl-kontrolle-info"></table></div>
+    </div>
+
+    <!-- TAB 6: KALLE TIC & MÄNGEL -->
+    <div id="tab-tickets" class="card hidden">
+      <div class="card-head">
+        <h2>🎫 Kalle Tic · Mängel & Aufgaben</h2>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button class="btn" onclick="neuesTicketDialog()">➕ Neues Ticket</button>
+          <a id="lnk-tickets" class="btn btn-gray" href="#" target="_blank">📊 Ticket-Sheet</a>
+        </div>
+      </div>
+      <div class="table-wrap"><table id="tbl-tickets"></table></div>
+    </div>
+  </div>
+
+  <!-- BEARBEITUNGS-MASKE (MODAL) FÜR RECHNUNGS-AUFMASS & PDF-NEUERZEUGUNG -->
+  <div id="rechnung-modal" class="hidden" style="position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:210; display:flex; align-items:center; justify-content:center; padding:12px;">
+    <div style="background:#fff; border-radius:12px; max-width:820px; width:100%; padding:18px; box-shadow:0 12px 32px rgba(0,0,0,0.3); max-height:92vh; overflow-y:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:12px;">
+        <h3 id="re-mod-titel" style="margin:0; font-size:16px;">✏️ Rechnung & Aufmaß bearbeiten</h3>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <a id="re-mod-sheet-link" class="btn btn-gray" href="#" target="_blank" style="padding:4px 10px; min-height:30px; font-size:12px;">📊 Google Sheet</a>
+          <button class="btn btn-gray" style="padding:4px 10px; min-height:30px;" onclick="schliesseRechnungModal()">✖</button>
+        </div>
+      </div>
+
+      <input type="hidden" id="re-mod-row" value="0">
+      <input type="hidden" id="re-mod-renr" value="">
+      <input type="hidden" id="re-mod-pnr" value="">
+      <input type="hidden" id="re-mod-pname" value="">
+      <input type="hidden" id="re-mod-colm" value="4">
+      <input type="hidden" id="re-mod-colep" value="6">
+      <input type="hidden" id="re-mod-colgp" value="7">
+
+      <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <span style="font-size:12.5px; color:#475569;">Ändere hier direkt <b>Menge (m² / m / Stk.)</b> oder <b>EP (€)</b> – die Summen rechnen sich sofort live mit:</span>
+        <select id="re-mod-steuer" onchange="berechneRechnungModalLive()" style="padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
+          <option value="19">19 % MwSt. (Regelbesteuerung)</option>
+          <option value="0">0 % MwSt. (§ 13b UStG)</option>
+        </select>
+      </div>
+
+      <div class="table-wrap" style="margin-bottom:12px;">
+        <table style="min-width:560px;">
+          <thead>
+            <tr>
+              <th style="width:55px;">Pos.</th>
+              <th>Leistung / Bezeichnung</th>
+              <th style="width:95px;">Menge</th>
+              <th style="width:65px;">Einh.</th>
+              <th style="width:105px;">EP (€)</th>
+              <th style="width:110px; text-align:right;">Gesamt (€)</th>
+            </tr>
+          </thead>
+          <tbody id="re-mod-tbody"></tbody>
+        </table>
+      </div>
+
+      <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:10px 14px; margin-bottom:14px; display:flex; justify-content:flex-end; gap:18px; flex-wrap:wrap; font-size:14px;">
+        <div>Netto: <b id="re-mod-netto">0,00 €</b></div>
+        <div>MwSt.: <b id="re-mod-mwst">0,00 €</b></div>
+        <div style="color:#16a34a; font-size:15px;">Brutto: <b id="re-mod-brutto">0,00 €</b></div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-gray" onclick="schliesseRechnungModal()">Abbrechen</button>
+        <button class="btn btn-green" onclick="speichereRechnungAusModal()">💾 Speichern & neues PDF erzeugen</button>
+        <button class="btn" style="background:#0ea5e9;" onclick="rechnungAusModalAnFastBill()">📤 Direkt an FastBill übergeben</button>
+      </div>
+    </div>
+  </div>
+  <div id="toast"></div>
+
+  <script>
+    const COCKPIT_API_URL = "https://script.google.com/macros/s/AKfycbyswXcqqVaSvVHXz6a-JieHvSGuPoNk4GMiSxRrEsrBEDGYY3-ozwICAZ5YTIYpdgD-/exec";
+
+    var FARBEN = ['#2563eb', '#f59e0b', '#16a34a', '#8b5cf6', '#ef4444', '#06b6d4'];
+    var AKTUELLE_PROJEKT_NR = '26-101';
+    var AKTUELLE_RE_NR = '202611100';
+    var BOX_WEBAPP_URL = '';
+    var KASSE_TIMER = null;
+
+    /**
+     * Einheitliche Backend-Brücke: funktioniert sowohl auf GitHub Pages (fetch)
+     * als auch direkt im Google Apps Script (google.script.run).
+     */
+    function callBackend(fnName, args, onSuccess, onError) {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        var runner = google.script.run.withSuccessHandler(onSuccess);
+        if (onError) runner = runner.withFailureHandler(onError);
+        runner[fnName].apply(runner, args || []);
+        return;
+      }
+
+      fetch(COCKPIT_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ fn: fnName, args: args || [] })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data || !data.ok) {
+          throw new Error((data && data.error) || 'Unbekannter Server-Fehler');
+        }
+        if (onSuccess) onSuccess(data.result);
+      })
+      .catch(function(err) {
+        if (onError) onError(err);
+        else alert('Fehler (' + fnName + '): ' + err.message);
+      });
+    }
+
+    function starteKasseStatusAnzeige(text) {
+      if (KASSE_TIMER) clearInterval(KASSE_TIMER);
+      var sek = 0;
+      var box = document.getElementById('kasse-ergebnis-box');
+      box.classList.remove('hidden');
+      box.style.background = '#fef9c3';
+      box.style.borderColor = '#fde047';
+      document.getElementById('kasse-lnk-sheet').classList.add('hidden');
+      document.getElementById('kasse-lnk-pdf').classList.add('hidden');
+      var txtEl = document.getElementById('kasse-ergebnis-text');
+      txtEl.innerHTML = '⏳ <b>' + text + '</b> (0 Sek. läuft...)';
+      KASSE_TIMER = setInterval(function() {
+        sek++;
+        txtEl.innerHTML = '⏳ <b>' + text + '</b> (' + sek + ' Sek. – bitte nicht schließen)...';
+      }, 1000);
+    }
+
+    function stoppeKasseStatusAnzeige(text, istFehler) {
+      if (KASSE_TIMER) { clearInterval(KASSE_TIMER); KASSE_TIMER = null; }
+      var box = document.getElementById('kasse-ergebnis-box');
+      box.classList.remove('hidden');
+      box.style.background = istFehler ? '#fee2e2' : '#f0fdf4';
+      box.style.borderColor = istFehler ? '#fca5a5' : '#bbf7d0';
+      document.getElementById('kasse-ergebnis-text').innerHTML = text;
+    }
+
+    function kalleKasseVorschauLaden() {
+      var proj = document.getElementById('kasse-projekt').value;
+      if (!proj) return alert('Bitte zuerst ein Projekt auswählen.');
+
+      starteKasseStatusAnzeige('Prüfe Tagesberichte, LV, Fotos & Soll-Ist für ' + proj);
+      var vBox = document.getElementById('kasse-vorschau-box');
+      vBox.classList.remove('hidden');
+      document.getElementById('kasse-sollist-html').innerHTML = '⏳ <b>Lade Soll-Ist-Stunden, Geräte & Containerdaten...</b>';
+      document.getElementById('kasse-abschlaege-html').innerHTML = '⏳ <b>Prüfe Rechnungsbuch auf bisherige Abschläge...</b>';
+      document.getElementById('kasse-berichte-html').innerHTML = '⏳ <b>Lese Tagesberichte & LV-Unterlagen...</b>';
+      document.getElementById('kasse-fotos-html').innerHTML = '⏳ <b>Suche Baustellenfotos im Projektordner...</b>';
+
+      callBackend('kalleKasseVorschauAusCockpit', [proj], function(daten) {
+        stoppeKasseStatusAnzeige('✅ Prüfung abgeschlossen für ' + daten.projektName + '!', false);
+
+        var si = daten.sollIst || {};
+        var diffColor = (si.stundenDifferenz || 0) >= 0 ? '#16a34a' : '#dc2626';
+        var dbColor = (si.deckungsbeitrag || 0) >= 0 ? '#16a34a' : '#dc2626';
+        var stdListe = (si.stundenDetails || []).map(function(s) {
+          return '<div style="font-size:11.5px; color:#475569;">• ' + s.datum + ' – ' + s.mitarbeiter + ': <b>' + s.stunden + ' h</b></div>';
+        }).join('');
+        var geraeteListe = (si.geraeteDetails || []).map(function(g) {
+          return '<div style="font-size:11.5px; color:#475569;">• ' + g.datum + ' – ' + g.geraet + ': <b>' + g.dauer + '</b></div>';
+        }).join('');
+
+        document.getElementById('kasse-sollist-html').innerHTML =
+          '<div><b>Angebot / Leistungsstand (netto):</b> ' + (si.sollErloesNetto || 0).toFixed(2).replace('.', ',') + ' €</div>' +
+          '<div><b>Personalstunden:</b> Soll <b>' + (si.sollStunden || 0) + ' h</b> · Ist <b>' + (si.istStunden || 0) + ' h</b> ' +
+          '(<span style="color:' + diffColor + '; font-weight:bold;">Diff: ' + (si.stundenDifferenz || 0).toFixed(1).replace('.', ',') + ' h</span>)</div>' +
+          (stdListe ? '<div style="margin:4px 0 6px 8px; max-height:90px; overflow-y:auto;">' + stdListe + '</div>' : '') +
+          '<div><b>Lohnkosten (intern):</b> ' + (si.istLohnKosten || 0).toFixed(2).replace('.', ',') + ' €</div>' +
+          '<div><b>Geräte / Maschinen (Ist):</b> <b>' + (si.istGeraeteStunden || 0) + ' h</b> (' + (si.istGeraeteKosten || 0).toFixed(2).replace('.', ',') + ' € intern)</div>' +
+          (geraeteListe ? '<div style="margin:4px 0 6px 8px; max-height:90px; overflow-y:auto;">' + geraeteListe + '</div>' : '') +
+          '<div><b>Container / Entsorgung (Ist):</b> ' + (si.istContainerNetto || 0).toFixed(2).replace('.', ',') + ' € (Soll-Mat.: ' + (si.sollMaterialNetto || 0).toFixed(2).replace('.', ',') + ' €)</div>' +
+          '<div style="margin-top:6px; padding-top:6px; border-top:1px dashed #cbd5e1;">' +
+          '<b>Deckungsbeitrag (netto):</b> <span style="color:' + dbColor + '; font-weight:bold;">' + (si.deckungsbeitrag || 0).toFixed(2).replace('.', ',') + ' €</span></div>';
+
+        var abs = daten.bisherigeRechnungen || { liste: [] };
+        if (abs.liste.length === 0) {
+          document.getElementById('kasse-abschlaege-html').innerHTML = '<span style="color:#64748b;">Noch keine vorherigen Rechnungen zu diesem Projekt vorhanden (1. Abrechnung).</span>';
+        } else {
+          var aHtml = abs.liste.map(function(r) {
+            var bCls = r.status.toLowerCase() === 'bezahlt' ? 'badge-done' : 'badge-open';
+            return '<div>• <b>' + r.rechnungsNr + '</b> (' + r.art + '): <b>' + r.netto.toFixed(2).replace('.', ',') + ' €</b> netto – <span class="badge ' + bCls + '">' + r.status + '</span></div>';
+          }).join('');
+          aHtml += '<div style="margin-top:6px; padding-top:6px; border-top:1px dashed #cbd5e1;"><b>Summe Abzug Abschläge:</b> ' + (abs.summeNettoAktiv || 0).toFixed(2).replace('.', ',') + ' € netto (davon bezahlt: ' + (abs.summeBezahltNetto || 0).toFixed(2).replace('.', ',') + ' €)</div>';
+          document.getElementById('kasse-abschlaege-html').innerHTML = aHtml;
+        }
+
+        var ber = daten.tagesberichte || [];
+        var pos = daten.positionen || [];
+        var bHtml = '<div><b>Erkannte LV-/Aufmaßpositionen:</b> ' + pos.length + '</div>';
+        if (ber.length > 0) {
+          bHtml += '<div style="margin-top:6px;">' + ber.map(function(b) {
+            return '<div style="margin-bottom:4px;">• <b>' + b.datum + '</b> (' + b.quelle + '): ' + b.rohText + '</div>';
+          }).join('') + '</div>';
+        } else {
+          bHtml += '<div style="color:#64748b; margin-top:4px;">Keine Tagesberichts-Texte im Ordner gefunden.</div>';
+        }
+        document.getElementById('kasse-berichte-html').innerHTML = bHtml;
+
+        var fotos = daten.fotos || [];
+        if (fotos.length > 0) {
+          document.getElementById('kasse-fotos-html').innerHTML = fotos.map(function(f) {
+            return '<a class="btn btn-gray" href="' + f.url + '" target="_blank" style="font-size:11.5px; padding:5px 8px;">📷 ' + f.datum + ': ' + f.name + '</a>';
+          }).join('');
+        } else {
+          document.getElementById('kasse-fotos-html').innerHTML = '<span style="color:#64748b;">Keine Baustellenfotos im Projektordner hinterlegt.</span>';
+        }
+      }, function(err) {
+        stoppeKasseStatusAnzeige('❌ Fehler beim Prüfen: ' + err.message, true);
+        document.getElementById('kasse-sollist-html').innerHTML = '<span style="color:#dc2626; font-weight:bold;">❌ ' + err.message + '</span>';
+      });
+    }
+
+    function kalleKasseLaufStarten(nurSollIst) {
+      var proj = document.getElementById('kasse-projekt').value;
+      var reArt = document.getElementById('kasse-rechnungsart').value;
+      var steuerArt = document.getElementById('kasse-steuerart').value;
+      var sollStd = document.getElementById('kasse-soll-std').value.trim();
+      var sollMat = document.getElementById('kasse-soll-mat').value.trim();
+
+      if (!proj) return alert('Bitte zuerst ein Projekt auswählen.');
+      var hinweis = nurSollIst
+        ? 'Soll-Ist-Vergleich (Nachkalkulation) für ' + proj + ' jetzt berechnen?'
+        : 'Aufmaß & Rechnungslauf für ' + proj + ' (' + (steuerArt === '13b' ? 'OHNE MwSt. § 13b UStG' : '19 % MwSt.') + ') jetzt starten?';
+      if (!confirm(hinweis)) return;
+
+      starteKasseStatusAnzeige(nurSollIst
+        ? 'Berechne Soll-Ist-Vergleich für ' + proj
+        : 'Kalle Kasse erstellt Aufmaß, Soll-Ist & Rechnung für ' + proj);
+
+      callBackend('kalleKasseStartenAusCockpit', [proj, steuerArt, reArt, sollStd, sollMat, nurSollIst], function(res) {
+        var sheetBtn = document.getElementById('kasse-lnk-sheet');
+        sheetBtn.href = res.masterSheetUrl || '#';
+        sheetBtn.classList.remove('hidden');
+
+        if (nurSollIst) {
+          stoppeKasseStatusAnzeige('📊 Soll-Ist-Vergleich für ' + res.projektName + ' fertig! Rechts Master-Sheet öffnen:', false);
+        } else {
+          var steuerTxt = res.ist13b ? '§ 13b UStG (0 % MwSt.)' : '19 % MwSt.';
+          var archTxt = res.archiviert ? ' · 📁 Ordner nach 99_Abgerechnet verschoben!' : '';
+          stoppeKasseStatusAnzeige('✅ RE-Nr. ' + res.rechnungsNr + ' (' + res.rechnungsArt + ' · ' + steuerTxt + ') erstellt!' + archTxt, false);
+          var pdfBtn = document.getElementById('kasse-lnk-pdf');
+          if (res.pdfUrl) {
+            pdfBtn.href = res.pdfUrl;
+            pdfBtn.classList.remove('hidden');
+          }
+          laden(true);
+        }
+      }, function(err) {
+        stoppeKasseStatusAnzeige('❌ Fehler in Kalle Kasse: ' + err.message, true);
+      });
+    }
+
+    function briefkopfKopieErstellen() {
+      var betreff = prompt("Betreff / Empfänger für das neue Schreiben (optional, z. B. 'Nachtrag_Mueller'):", "");
+      if (betreff === null) return;
+      meldung('⏳ Erstelle frische Briefkopf-Kopie...');
+      callBackend('erstelleBriefkopfKopieAusCockpit', [betreff], function(res) {
+        meldung(res.meldung);
+        if (res.url) {
+          var box = document.getElementById('neu-projekt-linkbox');
+          box.classList.remove('hidden');
+          document.getElementById('neu-projekt-text').innerText = '📝 Neue Briefkopf-Kopie: ' + res.name;
+          document.getElementById('neu-projekt-url').href = res.url;
+          window.open(res.url, '_blank');
+        }
+      });
+    }
+
+    function aktualisiereVorschau() {
+      var ort = document.getElementById('gen-ort').value.trim()
+        .replace(/\bAltenburg\b/gi, 'Altenb.')
+        .replace(/\bLippendorf\b/gi, 'Lippend.');
+      var kunde = document.getElementById('gen-kunde').value.trim()
+        .replace(/\bStraße\b/gi, 'Str.');
+      var gewerk = document.getElementById('gen-gewerk').value.trim();
+
+      var roh = [AKTUELLE_PROJEKT_NR, ort, kunde, gewerk].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+      var gekuerzt = roh.substring(0, 21).trim();
+      document.getElementById('gen-vorschau').innerText = gekuerzt;
+      var cnt = document.getElementById('gen-counter');
+      cnt.innerText = gekuerzt.length + ' / 21 Zeichen' + (roh.length > 21 ? ' (gekürzt)' : '');
+      cnt.style.color = roh.length > 21 ? '#d97706' : '#16a34a';
+    }
+
+    function projektJetztAnlegen() {
+      var ablage = document.getElementById('gen-ablage').value;
+      var ort = document.getElementById('gen-ort').value;
+      var kunde = document.getElementById('gen-kunde').value;
+      var gewerk = document.getElementById('gen-gewerk').value;
+
+      meldung('⏳ Lege Projektordner in ' + ablage + ' an...');
+      callBackend('erstelleProjektAusCockpit', [ablage, ort, kunde, gewerk], function(res) {
+        meldung(res.meldung);
+        document.getElementById('gen-ort').value = '';
+        document.getElementById('gen-kunde').value = '';
+        document.getElementById('gen-gewerk').value = '';
+        AKTUELLE_PROJEKT_NR = res.naechsteNr;
+        aktualisiereVorschau();
+        if (res.url) {
+          var box = document.getElementById('neu-projekt-linkbox');
+          box.classList.remove('hidden');
+          document.getElementById('neu-projekt-text').innerText = '✅ Angelegt: ' + res.projektName;
+          document.getElementById('neu-projekt-url').href = res.url;
+        }
+      });
+    }
+
+    function zeigeTab(name, el) {
+      document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+      el.classList.add('active');
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      ['dashboard','einsatzplan','container','rechnungen','auftraege','personal','urlaub','stempel','tickets'].forEach(function(id) {
+        document.getElementById('tab-' + id).classList.toggle('hidden', id !== name);
+      });
+    }
+
+    function zeigeSubTab(name, el) {
+      document.querySelectorAll('.subtab').forEach(function(t) { t.classList.remove('active'); });
+      el.classList.add('active');
+      ['steuer','tagesstd','vma'].forEach(function(id) {
+        document.getElementById('sub-' + id).classList.toggle('hidden', id !== name);
+      });
+    }
+
+    function meldung(txt) {
+      var t = document.getElementById('toast');
+      t.innerText = txt;
+      t.style.display = 'block';
+      setTimeout(function() { t.style.display = 'none'; }, 5000);
+    }
+
+    function baueKreisdiagramm(containerId, items, einheit) {
+      var total = items.reduce(function(s, x) { return s + x.value; }, 0);
+      if (!total) {
+        document.getElementById(containerId).innerHTML = 'Keine Daten vorhanden.';
+        return;
+      }
+      var kumuliert = 0;
+      var r = 64;
+      var cx = 80;
+      var cy = 80;
+      var umfang = 2 * Math.PI * r;
+      var circles = '';
+      var legende = '<div class="legend">';
+
+      items.forEach(function(item, idx) {
+        var farbe = FARBEN[idx % FARBEN.length];
+        var anteil = item.value / total;
+        var laenge = anteil * umfang;
+        var offset = -kumuliert * umfang;
+        kumuliert += anteil;
+        circles += '<circle r="' + r + '" cx="' + cx + '" cy="' + cy + '" fill="transparent" stroke="' + farbe + '" stroke-width="26" stroke-dasharray="' + laenge + ' ' + umfang + '" stroke-dashoffset="' + offset + '" transform="rotate(-90 ' + cx + ' ' + cy + ')"></circle>';
+        var prozent = Math.round(anteil * 100);
+        legende += '<div class="leg-item"><span><span class="dot" style="background:' + farbe + '"></span>' + item.label + '</span><b>' + item.value + einheit + ' (' + prozent + '%)</b></div>';
+      });
+      legende += '</div>';
+
+      var gesamtAnzeige = Math.round(total * 10) / 10;
+      var svg = '<svg width="150" height="150" viewBox="0 0 160 160" style="flex-shrink:0;">' + circles +
+        '<text x="80" y="77" text-anchor="middle" font-size="16" font-weight="bold" fill="#0f172a">' + gesamtAnzeige + einheit + '</text>' +
+        '<text x="80" y="94" text-anchor="middle" font-size="10" fill="#64748b">Gesamt</text></svg>';
+
+      document.getElementById(containerId).innerHTML = svg + legende;
+    }
+
+    function laden(forceRefresh) {
+      meldung(forceRefresh ? '🔄 Aktualisiere Live-Daten...' : '⚡ Lade Cockpit...');
+      callBackend('ladeCockpitDatenSchnell', [Boolean(forceRefresh)], function(d) {
+        render(d);
+        if (d && d._fromCache && !forceRefresh) {
+          callBackend('ladeCockpitDatenSchnell', [true], function(frisch) { render(frisch); });
+        }
+      }, function(err) {
+        alert('Fehler beim Laden der Cockpit-Daten: ' + err.message);
+      });
+    }
+
+    function render(d) {
+      if (d.naechsteProjektNr) {
+        AKTUELLE_PROJEKT_NR = d.naechsteProjektNr;
+        aktualisiereVorschau();
+      }
+      if (d.links) {
+        document.getElementById('lnk-uebergabe').href = d.links.uebergabe;
+        document.getElementById('lnk-personal').href = d.links.personal;
+        document.getElementById('lnk-urlaub').href = d.links.urlaub;
+        if (d.links.tickets) document.getElementById('lnk-tickets').href = d.links.tickets;
+        if (d.links.rechnungsbuch) {
+          document.getElementById('lnk-rechnungsbuch').href = d.links.rechnungsbuch;
+          document.getElementById('lnk-rechnungsbuch-top').href = d.links.rechnungsbuch;
+        }
+        if (d.links.generator) document.getElementById('lnk-generator').href = d.links.generator;
+        if (d.links.boxSheet) document.getElementById('lnk-box-sheet').href = d.links.boxSheet;
+        if (d.links.boxWebApp) {
+          BOX_WEBAPP_URL = d.links.boxWebApp;
+          var webBtn = document.getElementById('lnk-box-webapp');
+          webBtn.href = d.links.boxWebApp;
+          webBtn.classList.remove('hidden');
+          document.getElementById('btn-box-iframe').classList.remove('hidden');
+        }
+      }
+
+      if (d.rechInfo) {
+        AKTUELLE_RE_NR = d.rechInfo.naechsteReNr;
+        document.getElementById('kpi-renr').innerText = d.rechInfo.naechsteReNr;
+        document.getElementById('kpi-reoffen').innerText = d.rechInfo.offenBrutto;
+        document.getElementById('kpi-reueber').innerText = 'Überfällig: ' + d.rechInfo.ueberfaellig;
+      }
+
+      var selKasse = document.getElementById('kasse-projekt');
+      if (selKasse) {
+        var vorher = selKasse.value;
+        var ausfProjekte = (d.einsatzAuswahl || []).filter(function(p) { return p.bereich === '01_Ausfuehrung'; });
+        selKasse.innerHTML = ausfProjekte.map(function(p) {
+          return '<option value="' + p.projekt + '">' + p.projekt + '</option>';
+        }).join('');
+        if (vorher) selKasse.value = vorher;
+      }
+
+      document.getElementById('kpi-box').innerText = d.dashboard.aktiveContainer || 0;
+      document.getElementById('kpi-box-sub').innerText = 'Standzeit > 5 Tage: ' + (d.dashboard.ueberfaelligeContainer || 0);
+      document.getElementById('kpi-std').innerText = d.dashboard.gesamtProduktiv + ' h';
+      document.getElementById('kpi-url').innerText = d.dashboard.offeneUrlaube;
+      document.getElementById('kpi-tic').innerText = d.dashboard.offeneTickets + ' / ' + d.tickets.length;
+
+      baueKreisdiagramm('chart-baustellen', d.dashboard.baustellenChart, ' h');
+      baueKreisdiagramm('chart-zeit', d.dashboard.zeitChart, ' h');
+
+      if (d.kalenderHeute && d.kalenderHeute.length > 0) {
+        var kHtml = '<div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 12px; font-size:13px;"><b>📅 Heutige Einsätze:</b><br style="margin-bottom:4px;">';
+        kHtml += d.kalenderHeute.map(function(ev) {
+          return '<span class="badge" style="margin:3px 2px;">' + ev.zeit + ': ' + ev.titel + '</span>';
+        }).join(' ');
+        kHtml += '</div>';
+        document.getElementById('kalender-heute-box').innerHTML = kHtml;
+      }
+
+      var wHtml = '';
+      d.dashboard.werMachtWas.forEach(function(w) {
+        wHtml += '<div class="worker">' +
+          '<div class="worker-top"><b>' + w.name + '</b><span class="badge">' + w.team + '</span></div>' +
+          '<div style="font-size:13px; color:#1e293b; margin-bottom:4px;">🏗️ <b>' + w.baustelle + '</b></div>' +
+          '<div style="font-size:12px; color:#475569;">' + w.aufgabe + ' (' + w.datum + ')</div>' +
+          '</div>';
+      });
+      document.getElementById('wer-macht-was').innerHTML = wHtml;
+
+      var hBox = '<tr><th>Box-ID</th><th>Datum</th><th>Baustelle / Kunde</th><th>Menge & Material</th><th>Fahrzeug</th><th>Standzeit</th><th>Netto</th><th>Status</th><th>Beleg & Aktion</th></tr>';
+      (d.containerListe || []).forEach(function(c) {
+        var bId = c['Box-ID'] || '';
+        var st = c['Status'] || '';
+        var badgeCls = c._istAktiv ? (c._tage > 5 ? 'badge-high' : 'badge-open') : 'badge-done';
+        var standTxt = c._istAktiv
+          ? (c._tage > 5 ? '<b style="color:#dc2626;">' + c._tage + ' Tage (+' + c._standmieteNetto.toFixed(2).replace('.', ',') + ' €)</b>' : '<span style="color:#16a34a;">' + c._tage + ' / 5 Tage</span>')
+          : '–';
+        var pdfLink = c['Beleg-PDF'] ? '<a class="btn btn-gray" href="' + c['Beleg-PDF'] + '" target="_blank" title="Lieferschein / Abholzettel PDF">📄</a>' : '';
+        var dirLink = c['Entsorgungs-Ordner'] ? '<a class="btn btn-gray" href="' + c['Entsorgungs-Ordner'] + '" target="_blank" title="Entsorgungs-Ordner">📂</a>' : '';
+        var abholBtn = c._istAktiv
+          ? '<button class="btn btn-green" onclick="containerAbholen(' + c._row + ', \'' + bId + '\')">✅ Abgeholt</button>'
+          : '';
+
+        hBox += '<tr>' +
+          '<td><b>' + bId + '</b></td>' +
+          '<td>' + (c['Datum'] || '') + '</td>' +
+          '<td><b>' + (c['Baustelle / Kunde'] || '') + '</b><br><span style="font-size:11.5px; color:#64748b;">' + (c['Bemerkung / Deponie'] || '') + '</span></td>' +
+          '<td>' + (c['Containergröße / Menge'] || '') + ' · ' + (c['Material / Abfallart'] || '') + '</td>' +
+          '<td>' + (c['Fahrzeug'] || '') + '</td>' +
+          '<td>' + standTxt + '</td>' +
+          '<td><b>' + (c['Betrag Netto'] || '') + '</b></td>' +
+          '<td><span class="badge ' + badgeCls + '">' + st + '</span></td>' +
+          '<td style="white-space:nowrap;">' + pdfLink + dirLink + abholBtn + '</td>' +
+          '</tr>';
+      });
+      document.getElementById('tbl-container').innerHTML = (d.containerListe && d.containerListe.length > 0)
+        ? hBox
+        : '<tr><td style="padding:16px; color:#64748b;">Noch keine Container-Vorgänge in Kalle_Box_Log vorhanden.</td></tr>';
+
+      if (d.einsatzSheetUrl) document.getElementById('lnk-einsatz-sheet').href = d.einsatzSheetUrl;
+      var auswahlHtml = '';
+      (d.einsatzAuswahl || []).forEach(function(p) {
+        var pClean = (p.projekt || '').replace(/'/g, "");
+        var bClean = (p.beschreibung || '').replace(/'/g, "");
+        var infoText = p.beschreibung
+          ? '<div style="font-size:12.5px; color:#1e293b; margin-top:4px; line-height:1.35;">📝 ' + p.beschreibung + '</div>'
+          : '<div style="font-size:12px; color:#94a3b8; margin-top:4px; font-style:italic;">Noch keine Kurzbeschreibung hinterlegt</div>';
+
+        auswahlHtml += '<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; background:#f8fafc; border:1px solid #cbd5e1; padding:10px 12px; border-radius:8px;">' +
+          '<label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; flex:1;">' +
+          '<input type="checkbox" class="chk-projekt-14t" value="' + p.projekt + '" ' + (p.aktiv ? 'checked' : '') + ' style="width:20px; height:20px; margin-top:2px; accent-color:#16a34a; flex-shrink:0;">' +
+          '<div><div style="font-weight:bold; font-size:14px;">' + p.projekt + '</div>' +
+          '<div style="font-size:11.5px; color:#64748b;">' + p.bereich + ' · Stand: ' + p.stand + '</div>' +
+          infoText + '</div></label>' +
+          '<button type="button" class="btn btn-gray" style="padding:4px 8px; min-height:30px; font-size:12px;" title="Kurzbeschreibung (2 Sätze) bearbeiten" onclick="projektInfoBearbeiten(\'' + pClean + '\', \'' + bClean + '\')">✏️</button>' +
+          '</div>';
+      });
+      document.getElementById('projekt-auswahl-liste').innerHTML = auswahlHtml || '<span style="color:#64748b;">Noch keine Projekte synchronisiert.</span>';
+
+      var dlBau = document.getElementById('dl-baustellen');
+      if (dlBau) {
+        dlBau.innerHTML = (d.einsatzAuswahl || []).map(function(p) {
+          return '<option value="' + p.projekt + '">';
+        }).join('');
+      }
+
+      var avBox = document.getElementById('av-vorlagen-liste');
+      if (avBox) {
+        var avListe = d.avVorlagen || [];
+        avBox.innerHTML = avListe.length > 0 ? avListe.map(function(v) {
+          var pClean = (v.projekt || '').replace(/'/g, "");
+          var bClean = (v.beschreibung || '').replace(/'/g, "");
+          var pdfBtn = v.link ? '<a class="btn btn-gray" href="' + v.link + '" target="_blank" style="padding:5px 9px; min-height:30px;">📄</a>' : '';
+          return '<div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:11px;">' +
+            '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">' +
+            '<span class="badge">' + v.jobId + ' · ' + v.modul + '</span>' + pdfBtn + '</div>' +
+            '<div style="font-weight:bold; font-size:14px; margin-bottom:4px;">' + v.projekt + '</div>' +
+            '<div style="font-size:12px; color:#475569; margin-bottom:8px;">' + (v.protokoll || v.beschreibung) + '</div>' +
+            '<button class="btn btn-green" style="width:100%;" onclick="avInMontagUebernehmen(\'' + pClean + '\', \'' + bClean + '\')">📅 Für Montag in AV übernehmen</button>' +
+            '</div>';
+        }).join('') : '<span style="color:#64748b; font-size:13px;">Keine Dateien in 07_Kalkulation oder 02_Berichte gefunden.</span>';
+      }
+
+      var hPlan = '<tr><th>Datum</th><th>Tag</th><th>Kolonne / Transport</th><th>Baustelle</th><th>Arbeitsauftrag</th><th>Transporter-Werkzeug / Material</th><th>🌦️ Wetter-AV</th><th>Aktion</th></tr>';
+      (d.einsatzAuftraege || []).forEach(function(a) {
+        var dat = (a['Datum'] || '').replace(/'/g, "");
+        var tag = (a['Tag'] || '').replace(/'/g, "");
+        var kol = (a['Kolonne / Transport'] || '').replace(/'/g, "");
+        var bau = (a['Baustelle'] || '').replace(/'/g, "");
+        var auf = (a['Kurzer Arbeitsauftrag'] || '').replace(/'/g, "");
+        var wkz = (a['Transporter-Werkzeug / Material / Ladeliste'] || '').replace(/'/g, "");
+        var wet = (a['Wetter'] || a['Wetter-Ampel'] || '').replace(/'/g, "");
+        var istTrans = kol.toLowerCase().indexOf('transport') !== -1 || kol.toLowerCase().indexOf('volvo') !== -1 || kol.toLowerCase().indexOf('man') !== -1 || kol.toLowerCase().indexOf('multicar') !== -1;
+        var badgeCls = istTrans ? 'badge-trans' : '';
+
+        hPlan += '<tr class="' + (istTrans ? 'row-transport' : '') + '">' +
+          '<td style="white-space:nowrap;"><b>' + dat + '</b></td>' +
+          '<td>' + tag + '</td>' +
+          '<td><span class="badge ' + badgeCls + '">' + kol + '</span></td>' +
+          '<td><b>' + bau + '</b></td>' +
+          '<td>' + auf + '</td>' +
+          '<td style="font-size:12.5px; color:#334155;">' + wkz + '</td>' +
+          '<td style="font-size:12px; color:#1e293b; white-space:nowrap;">' + (wet || '–') + '</td>' +
+          '<td style="white-space:nowrap;">' +
+          '<button class="btn btn-amber" onclick="oeffneAuftragModal(' + a._row + ', \'' + dat + '\', \'' + tag + '\', \'' + kol + '\', \'' + bau + '\', \'' + auf + '\', \'' + wkz + '\')">✏️</button>' +
+          '<button class="btn btn-red" onclick="arbeitsauftragLoeschen(' + a._row + ')">🗑️</button>' +
+          '</td></tr>';
+      });
+      document.getElementById('tbl-einsatzplan').innerHTML = hPlan;
+
+      var hRech = '<tr><th>RE-Nr.</th><th>Datum</th><th>Fällig</th><th>Projekt</th><th>Kunde</th><th>Art</th><th>Netto</th><th>Brutto</th><th>Status</th><th>Aktionen</th></tr>';
+      (d.rechnungen || []).forEach(function(r) {
+        var st = r['Zahlungsstatus'] || '';
+        var reNr = r['Rechnungs-Nr.'] || '';
+        var isAnker = r._row === 2;
+        var quelleStr = String(r['Quelle'] || '');
+        var fbMatch = quelleStr.match(/FB-ID:\s*(\d+)/i);
+        var hatFastBill = Boolean(fbMatch);
+        var badgeCls = st === 'Bezahlt' ? 'badge-done' : (st === 'Storno' ? 'badge-high' : 'badge-open');
+        var pdfBtn = r['PDF-Link'] ? '<a class="btn btn-gray" href="' + r['PDF-Link'] + '" target="_blank" title="Gesamt-PDF ansehen">📄</a>' : '';
+        var pNrClean = String(r['Projekt-Nr.'] || '').replace(/'/g, "");
+        var pNameClean = String(r['Projektname'] || '').replace(/'/g, "");
+        var fbBtn = hatFastBill
+          ? '<span class="badge badge-done" title="Bereits an FastBill übergeben (ID: ' + fbMatch[1] + ')">✅ FB</span>'
+          : '<button class="btn" style="background:#0ea5e9;" title="Geprüfte Rechnung & Aufmaß-PDF an FastBill Plus übergeben" onclick="rechnungAnFastBill(' + r._row + ', \'' + reNr + '\', \'' + pNrClean + '\', \'' + pNameClean + '\')">📤 FastBill</button>';
+
+        var aktionen = isAnker
+          ? '<span style="font-size:11.5px; color:#64748b;">BRZ-Anker</span>'
+          : '<div style="display:flex; gap:4px; flex-wrap:nowrap; align-items:center;">' + pdfBtn +
+            '<button class="btn btn-gray" title="Master-Sheet bearbeiten" onclick="masterSheetOeffnen(\'' + pNrClean + '\', \'' + pNameClean + '\')">📊 Sheet</button>' +
+            '<button class="btn" title="Positionen prüfen & neues PDF erzeugen" onclick="pdfAusSheetNeuErstellen(' + r._row + ', \'' + reNr + '\', \'' + pNrClean + '\', \'' + pNameClean + '\')">🔄 PDF neu</button>' +
+            (st !== 'Storno' ? fbBtn : '') +
+            (st !== 'Bezahlt' && st !== 'Storno' ? '<button class="btn btn-green" onclick="rechnungBezahlt(' + r._row + ')">💶 Bezahlt</button>' : '') +
+            (st !== 'Storno' ? '<button class="btn btn-amber" onclick="rechnungStorno(' + r._row + ', \'' + reNr + '\')">🚫 Storno</button>' : '') +
+            '<button class="btn btn-red" onclick="rechnungLoeschen(' + r._row + ', \'' + reNr + '\')">🗑️</button></div>';
+
+        hRech += '<tr>' +
+          '<td><b>' + reNr + '</b></td>' +
+          '<td>' + r['Rechnungsdatum'] + '</td>' +
+          '<td>' + r['Fällig am'] + '</td>' +
+          '<td><b>' + r['Projekt-Nr.'] + '</b> ' + r['Projektname'] + '</td>' +
+          '<td>' + r['Kunde / Empfänger'] + '</td>' +
+          '<td>' + r['Rechnungsart'] + '</td>' +
+          '<td>' + r['Netto (€)'] + '</td>' +
+          '<td><b>' + r['Brutto (€)'] + '</b></td>' +
+          '<td><span class="badge ' + badgeCls + '">' + st + '</span></td>' +
+          '<td>' + aktionen + '</td>' +
+          '</tr>';
+      });
+      document.getElementById('tbl-rechnungen').innerHTML = hRech;
+
+      var h1 = '<tr><th>ID</th><th>Modul</th><th>Projekt</th><th>Status</th><th>Prüf-Protokoll</th><th>PDF</th><th>Aktion</th></tr>';
+      d.auftraege.forEach(function(r) {
+        var pdfLink = r['Link Ergebnis-PDF / Sheet'] ? '<a class="btn btn-gray" href="' + r['Link Ergebnis-PDF / Sheet'] + '" target="_blank">📄 PDF</a>' : '–';
+        h1 += '<tr>' +
+          '<td><b>' + r['Auftrags-ID'] + '</b></td>' +
+          '<td><span class="badge">' + r['Modul (KALK / BAU / KASSE)'] + '</span></td>' +
+          '<td>' + r['Projekt / Baustelle'] + '</td>' +
+          '<td>' + (r['Prüf-Status'] || r['Ausführungs-Status']) + '</td>' +
+          '<td>' + (r['Prüf-Protokoll'] || '') + '</td>' +
+          '<td>' + pdfLink + '</td>' +
+          '<td><button class="btn btn-green" onclick="auftragSenden(' + r._row + ', \'' + r['Projekt / Baustelle'] + '\')">✉️ Senden</button></td>' +
+          '</tr>';
+      });
+      document.getElementById('tbl-auftraege').innerHTML = h1;
+
+      var h2 = '<tr><th>Mitarbeiter</th><th>Team</th><th>Tage</th><th>Produktiv</th><th>Krank</th><th>Urlaub</th><th>Gesamt</th><th>VMA</th><th>Nachweis</th></tr>';
+      d.lohnListe.forEach(function(r) {
+        h2 += '<tr>' +
+          '<td><b>' + r['Mitarbeiter'] + '</b></td><td>' + r['Team / Bereich'] + '</td><td>' + r['Baustellen-Tage'] + '</td>' +
+          '<td>' + r['Produktiv-Std.'] + '</td><td>' + r['Krankheit (h)'] + '</td><td>' + r['Urlaub (h)'] + '</td>' +
+          '<td><b>' + r['Gesamt Abrechnung (h)'] + '</b></td><td>' + r['VMA Tage (>8h)'] + '</td>' +
+          '<td><button class="btn" onclick="nachweisSenden(\'' + r['Mitarbeiter'] + '\')">✉️ Mailen</button></td>' +
+          '</tr>';
+      });
+      document.getElementById('tbl-personal').innerHTML = h2;
+
+      var hTages = '<tr><th>Datum</th><th>Mitarbeiter</th><th>Baustelle / Einsatzort</th><th>Von–Bis</th><th>Netto</th><th>Besonderheiten</th><th>Bearbeiten</th></tr>';
+      d.kontrolle.forEach(function(k) {
+        var ort = (k['Baustelle / Einsatzort'] || '').replace(/'/g, "");
+        var std = k['Netto (h)'] || '';
+        var notiz = (k['Besonderheiten / Status'] || '').replace(/'/g, "");
+        hTages += '<tr>' +
+          '<td>' + k['Datum'] + '</td><td><b>' + k['Mitarbeiter'] + '</b></td><td>' + ort + '</td>' +
+          '<td>' + (k['Von'] || '') + ' – ' + (k['Bis'] || '') + '</td><td><b>' + std + ' h</b></td><td>' + notiz + '</td>' +
+          '<td><button class="btn btn-amber" onclick="tagesstundeAendern(' + k._row + ', \'' + ort + '\', \'' + std + '\', \'' + notiz + '\')">✏️ Ändern</button></td>' +
+          '</tr>';
+      });
+      document.getElementById('tbl-tagesstd').innerHTML = hTages;
+
+      var hVma = '<tr><th>Mitarbeiter</th><th>VMA</th><th>Fahrtstrecke</th><th>Gesamt</th><th>Versand</th></tr>';
+      d.nachweise.forEach(function(n) {
+        var treffer = d.lohnListe.filter(function(l) { return l['Mitarbeiter'].indexOf(n.vorname) === 0; })[0];
+        var vollname = treffer ? treffer['Mitarbeiter'] : n.vorname;
+        hVma += '<tr>' +
+          '<td><b>' + vollname + '</b></td><td>' + n.vma + '</td><td>' + n.fahrt + '</td><td><b>' + n.gesamt + '</b></td>' +
+          '<td><button class="btn" onclick="nachweisSenden(\'' + vollname + '\')">✉️ Senden</button></td>' +
+          '</tr>';
+      });
+      document.getElementById('tbl-vma').innerHTML = hVma;
+
+      var h3 = '<tr><th>Mitarbeiter</th><th>Art</th><th>Von</th><th>Bis</th><th>Tage</th><th>Status</th><th>Aktion</th></tr>';
+      d.urlaube.forEach(function(r) {
+        h3 += '<tr>' +
+          '<td><b>' + r['Name des Mitarbeiters'] + '</b></td><td>' + r['Art der Abwesenheit'] + '</td>' +
+          '<td>' + r['Erster freier Tag ( Von)'] + '</td><td>' + r['Letzter freier Tag ( Bis)'] + '</td>' +
+          '<td>' + r['Anzahl der Arbeitstage'] + '</td><td>' + r['Status'] + '</td>' +
+          '<td style="white-space:nowrap;">' +
+          '<button class="btn btn-green" onclick="urlaubAktion(' + r._row + ', \'Genehmigt\')">✅</button>' +
+          '<button class="btn btn-red" onclick="urlaubAktion(' + r._row + ', \'Abgelehnt\')">❌</button>' +
+          '</td></tr>';
+      });
+      document.getElementById('tbl-urlaub').innerHTML = h3;
+
+      var h4 = '<tr><th>Datum</th><th>Uhrzeit</th><th>Mitarbeiter</th><th>Aktion</th><th>Baustelle</th><th>GPS</th></tr>';
+      d.stempel.forEach(function(r) {
+        h4 += '<tr><td>' + r['Datum'] + '</td><td>' + r['Uhrzeit'] + '</td><td><b>' + r['Mitarbeiter'] + '</b></td><td>' + r['Aktion'] + '</td><td>' + r['Baustelle (Kalender)'] + '</td><td><a href="' + r['Google Maps Link'] + '" target="_blank">📍 Karte</a></td></tr>';
+      });
+      document.getElementById('tbl-stempel').innerHTML = h4;
+
+      var hK = '<tr><th>Datum</th><th>Mitarbeiter</th><th>Baustelle</th><th>Netto</th><th>Fotos?</th><th>Bericht?</th><th>Status</th></tr>';
+      d.kontrolle.slice(0, 15).forEach(function(k) {
+        hK += '<tr><td>' + k['Datum'] + '</td><td><b>' + k['Mitarbeiter'] + '</b></td><td>' + k['Baustelle / Einsatzort'] + '</td><td>' + k['Netto (h)'] + '</td><td>' + k['Fotos ok? (Zollstock)'] + '</td><td>' + k['Tagesbericht?'] + '</td><td>' + k['Besonderheiten / Status'] + '</td></tr>';
+      });
+      document.getElementById('tbl-kontrolle-info').innerHTML = hK;
+
+      var h5 = '<tr><th>ID</th><th>Datum</th><th>Projekt</th><th>Bereich</th><th>Prio</th><th>Aufgabe / Mangel</th><th>Zuständig</th><th>Status</th><th>Aktion</th></tr>';
+      d.tickets.forEach(function(t) {
+        var st = String(t['Status'] || '').toUpperCase();
+        var badgeCls = st === 'ERLEDIGT' ? 'badge-done' : (t['Priorität'] === 'HOCH' ? 'badge-high' : 'badge-open');
+        var aktionBtn = st === 'ERLEDIGT'
+          ? '<span style="color:#16a34a;font-weight:bold;">✔ Erledigt</span>'
+          : '<button class="btn btn-green" onclick="ticketErledigen(' + t._row + ')">✅ Abhaken</button>';
+        h5 += '<tr>' +
+          '<td><b>' + t['Ticket-ID'] + '</b></td>' +
+          '<td>' + t['Erstellt am'] + '</td>' +
+          '<td><b>' + t['Projekt / Objekt'] + '</b></td>' +
+          '<td>' + t['Kategorie'] + '</td>' +
+          '<td>' + t['Priorität'] + '</td>' +
+          '<td>' + t['Aufgabe / Mangel / Reklamation'] + '</td>' +
+          '<td>' + t['Zuständig'] + '</td>' +
+          '<td><span class="badge ' + badgeCls + '">' + st + '</span></td>' +
+          '<td>' + aktionBtn + '</td>' +
+          '</tr>';
+      });
+      document.getElementById('tbl-tickets').innerHTML = h5;
+    }
+
+    function containerAbholen(row, boxId) {
+      var gew = prompt("Container " + boxId + " abgeholt! Falls Gewichtsabrechnung: Wiegeschein-Gewicht in Tonnen eingeben (sonst leer lassen für Pauschale):", "");
+      if (gew === null) return;
+      meldung('⏳ Verbuche Abholung für ' + boxId + '...');
+      callBackend('containerAbgeholtImCockpit', [row, gew.trim()], function(res) { meldung(res); laden(true); });
+    }
+
+    function kopiereIframeCode() {
+      if (!BOX_WEBAPP_URL) return;
+      var code = '<iframe src="' + BOX_WEBAPP_URL + '" width="100%" height="940" frameborder="0" style="border-radius:14px; max-width:820px; display:block; margin:auto;"></iframe>';
+      navigator.clipboard.writeText(code);
+      meldung("📋 Einbettungscode (iframe) für eure Website kopiert!");
+    }
+
+    function auswahlSpeichern() {
+      var ausgewaehlt = Array.from(document.querySelectorAll('.chk-projekt-14t:checked')).map(function(cb) { return cb.value; });
+      meldung('⏳ Speichere Projektauswahl...');
+      callBackend('speichereProjektAuswahlImCockpit', [ausgewaehlt], function(res) { meldung(res); laden(true); });
+    }
+
+    function wocheAutoPlanen() {
+      var ausgewaehlt = Array.from(document.querySelectorAll('.chk-projekt-14t:checked')).map(function(cb) { return cb.value; });
+      if (ausgewaehlt.length === 0) return alert('Bitte zuerst mindestens ein Projekt anhaken!');
+      meldung('🤖 Kalle plant Woche & Wetter-AV aus ' + ausgewaehlt.length + ' Projekten...');
+      callBackend('planeWocheAutomatischAusAuswahl', [ausgewaehlt], function(res) {
+        meldung(res);
+        laden(true);
+      });
+    }
+
+    function baustelleGewaehltAutoLv() {
+      var bau = document.getElementById('mod-baustelle').value.trim();
+      if (!bau) return;
+      meldung('⏳ Ziehe LV-Positionen & AV-Material für ' + bau + '...');
+      callBackend('holeAutoAvFuerBaustelle', [bau], function(av) {
+        if (av.auftrag && !document.getElementById('mod-auftrag').value.trim()) {
+          document.getElementById('mod-auftrag').value = av.auftrag;
+        }
+        if (av.werkzeug) {
+          document.getElementById('mod-werkzeug').value = av.werkzeug;
+        }
+        meldung(av.auftrag ? '✅ LV-Daten automatisch übernommen!' : 'ℹ️ Kein LV gefunden – bitte kurz ergänzen.');
+      });
+    }
+
+    function arbeitsauftragLoeschen(row) {
+      if (!confirm("Diesen Arbeitsauftrag / Tour wirklich löschen?")) return;
+      callBackend('loescheArbeitsauftragImCockpit', [row], function(res) { meldung(res); laden(true); });
+    }
+
+    function auftraegeAnChatPosten() {
+      if (!confirm("Alle angezeigten Arbeitsaufträge & LKW-Touren jetzt in die Google Kalender (Team 1, Team 2 & Transport) eintragen & für 06:30 Uhr freigeben?")) return;
+      meldung('⏳ Synchronisiere Kalender (inkl. Transport) & aktiviere 06:30-Uhr-Freigabe...');
+      callBackend('posteArbeitsauftraegeAusCockpit', [], function(res) { meldung(res); });
+    }
+
+    function rechnungBezahlt(row) {
+      callBackend('markiereRechnungBezahlt', [row], function(res) { meldung(res); laden(true); });
+    }
+
+    function rechnungStorno(row, reNr) {
+      if (!confirm("Rechnung " + reNr + " wirklich auf STORNO setzen?")) return;
+      callBackend('storniereRechnungImCockpit', [row], function(res) { meldung(res); laden(true); });
+    }
+
+    function rechnungLoeschen(row, reNr) {
+      if (!confirm("Testzeile " + reNr + " komplett löschen?")) return;
+      callBackend('loescheRechnungZeileImCockpit', [row], function(res) { meldung(res); laden(true); }, function(err) { alert(err.message); });
+    }
+
+    function rechnungsNummerAnpassen() {
+      var neu = prompt("Welche 9-stellige Rechnungsnummer (JJJJMMNNN) soll als NÄCHSTES vergeben werden?", AKTUELLE_RE_NR);
+      if (!neu) return;
+      callBackend('setzeNaechsteRechnungsnummerImCockpit', [neu], function(res) { meldung(res); laden(true); }, function(err) { alert(err.message); });
+    }
+
+    function ticketErledigen(row) {
+      callBackend('schliesseCockpitTicket', [row], function(res) { meldung(res); laden(true); });
+    }
+
+    function neuesTicketDialog() {
+      var projekt = prompt("Projekt / Objekt (z. B. 26-086 He Groi Z36b-c):", "26-086 He Groi Z36b-c");
+      if (projekt === null) return;
+      var aufgabe = prompt("Aufgabe / Mangel / Reklamation beschreiben:");
+      if (!aufgabe) return;
+      var prio = prompt("Priorität (HOCH / MITTEL / NIEDRIG):", "MITTEL") || "MITTEL";
+      var zustaendig = prompt("Zuständig (z. B. Team 1, Team 2, Tilo, Büro):", "Büro / Bauleitung") || "Büro / Bauleitung";
+      callBackend('erstelleCockpitTicket', [projekt, "Baustelle / Restarbeit", prio.toUpperCase(), aufgabe, zustaendig], function(res) { meldung(res); laden(true); });
+    }
+
+    function tagesstundeAendern(row, ortAlt, stdAlt, notizAlt) {
+      var ort = prompt("Baustelle / Einsatzort:", ortAlt);
+      if (ort === null) return;
+      var std = prompt("Netto-Stunden (z. B. 8.5):", stdAlt);
+      if (std === null) return;
+      var notiz = prompt("Besonderheiten / Tätigkeit:", notizAlt);
+      if (notiz === null) return;
+      callBackend('bearbeiteTagesstunde', [row, ort, std, notiz], function(res) { meldung(res); laden(true); });
+    }
+
+    function auftragSenden(row, projekt) {
+      var mail = prompt("An welche E-Mail-Adresse soll '" + projekt + "' versendet werden?");
+      if (!mail) return;
+      var text = prompt("Begleittext für den Kunden:", "Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie die Unterlagen zu Ihrem Bauvorhaben " + projekt + ".\n\nMit freundlichen Grüßen\nSK Erd- und Tiefbau GmbH");
+      callBackend('versendeAuftragEinzeln', [row, mail, "SK Erd- und Tiefbau GmbH – " + projekt, text], function(res) { meldung(res); laden(true); });
+    }
+
+    function nachweisSenden(name) {
+      if (!confirm("Monats-Nachweis (VMA & Fahrtkosten) jetzt einzeln an " + name + " senden?")) return;
+      callBackend('versendeMitarbeiterNachweis', [name], function(res) { meldung(res); });
+    }
+
+    function steuerbueroSenden() {
+      if (!confirm("Monatsübersicht jetzt komplett an das Steuerbüro senden?")) return;
+      callBackend('versendeSteuerbueroUebersicht', [], function(res) { meldung(res); });
+    }
+
+    function urlaubAktion(row, status) {
+      callBackend('bearbeiteUrlaubsantrag', [row, status], function(res) { meldung(res); laden(true); });
+    }
+
+    function berechneNaechstenMontag_() {
+      var d = new Date();
+      var diff = (1 - d.getDay() + 7) % 7;
+      if (diff === 0) diff = 7;
+      d.setDate(d.getDate() + diff);
+      return d;
+    }
+
+    function formatDatumDe_(d) {
+      return ('0' + d.getDate()).slice(-2) + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.' + d.getFullYear();
+    }
+
+    function oeffneAuftragModal(row, dat, tag, kol, bau, auf, wkz) {
+      var mo = berechneNaechstenMontag_();
+      var tageNamen = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+      var btnsHtml = '';
+      for (var i = 0; i < 5; i++) {
+        var tDate = new Date(mo.getFullYear(), mo.getMonth(), mo.getDate() + i);
+        var dStr = formatDatumDe_(tDate);
+        var tKurz = tageNamen[tDate.getDay()];
+        btnsHtml += '<button type="button" class="btn btn-gray" style="padding:5px 9px; min-height:32px; font-size:12px;" onclick="setzeModalTag(\'' + dStr + '\', \'' + tKurz + '\')">' + tKurz + ' ' + dStr.slice(0, 5) + '</button>';
+      }
+      document.getElementById('mod-tage-btns').innerHTML = btnsHtml;
+
+      document.getElementById('mod-row').value = row || 0;
+      document.getElementById('modal-titel').innerText = row ? '✏️ Arbeitsauftrag & AV nachbearbeiten' : '➕ Neuen Kolonnen-Auftrag / AV anlegen';
+      document.getElementById('mod-datum').value = dat || formatDatumDe_(mo);
+      document.getElementById('mod-tag').value = tag || 'Mo';
+      document.getElementById('mod-kolonne').value = kol || 'Kolonne 1 (Philipp/Frank)';
+      document.getElementById('mod-baustelle').value = bau || '';
+      document.getElementById('mod-auftrag').value = auf || '';
+      document.getElementById('mod-werkzeug').value = wkz || 'Transporter: ';
+      document.getElementById('auftrag-modal').classList.remove('hidden');
+    }
+
+    function setzeModalTag(dStr, tKurz) {
+      document.getElementById('mod-datum').value = dStr;
+      document.getElementById('mod-tag').value = tKurz;
+    }
+
+    function schliesseAuftragModal() {
+      document.getElementById('auftrag-modal').classList.add('hidden');
+    }
+
+    function speichereAuftragAusModal() {
+      var row = Number(document.getElementById('mod-row').value || 0);
+      var dat = document.getElementById('mod-datum').value.trim();
+      var tag = document.getElementById('mod-tag').value.trim();
+      var kol = document.getElementById('mod-kolonne').value;
+      var bau = document.getElementById('mod-baustelle').value.trim();
+      var auf = document.getElementById('mod-auftrag').value.trim();
+      var wkz = document.getElementById('mod-werkzeug').value.trim();
+
+      if (!dat || !bau) return alert('Bitte mindestens Datum und Baustelle angeben.');
+      schliesseAuftragModal();
+      meldung('⏳ Speichere Arbeitsauftrag & Wetter-AV...');
+      callBackend('bearbeiteArbeitsauftragImCockpit', [row, dat, tag, kol, bau, auf, wkz], function(res) {
+        meldung(res);
+        laden(true);
+      });
+    }
+
+    // === LOGISTIK / LKW-TOUR MODAL FUNKTIONEN ===
+    function oeffneLogistikModal() {
+      var heute = new Date();
+      var morgen = new Date(heute.getFullYear(), heute.getMonth(), heute.getDate() + 1);
+      if (morgen.getDay() === 0) morgen.setDate(morgen.getDate() + 1);
+      if (morgen.getDay() === 6) morgen.setDate(morgen.getDate() + 2);
+
+      var tageNamen = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+      var btnsHtml = '';
+      for (var i = 0; i < 6; i++) {
+        var tDate = new Date(heute.getFullYear(), heute.getMonth(), heute.getDate() + i);
+        if (tDate.getDay() === 0 || tDate.getDay() === 6) continue;
+        var dStr = formatDatumDe_(tDate);
+        var tKurz = tageNamen[tDate.getDay()];
+        btnsHtml += '<button type="button" class="btn btn-gray" style="padding:5px 9px; min-height:32px; font-size:12px;" onclick="setzeLogistikTag(\'' + dStr + '\', \'' + tKurz + '\')">' + tKurz + ' ' + dStr.slice(0, 5) + '</button>';
+      }
+      document.getElementById('log-tage-btns').innerHTML = btnsHtml;
+
+      document.getElementById('log-datum').value = formatDatumDe_(morgen);
+      document.getElementById('log-tag').value = tageNamen[morgen.getDay()];
+      document.getElementById('log-baustelle').value = '';
+      document.getElementById('log-ladung').value = '';
+      document.getElementById('log-strecke').value = 'Bauhof Pegau → Baustelle';
+      document.getElementById('logistik-modal').classList.remove('hidden');
+    }
+
+    function setzeLogistikTag(dStr, tKurz) {
+      document.getElementById('log-datum').value = dStr;
+      document.getElementById('log-tag').value = tKurz;
+    }
+
+    function schliesseLogistikModal() {
+      document.getElementById('logistik-modal').classList.add('hidden');
+    }
+
+    function speichereLogistikTourAusModal() {
+      var dat = document.getElementById('log-datum').value.trim();
+      var tag = document.getElementById('log-tag').value.trim();
+      var fz  = document.getElementById('log-fahrzeug').value;
+      var fa  = document.getElementById('log-fahrer').value;
+      var zf  = document.getElementById('log-zeitfenster').value;
+      var bau = document.getElementById('log-baustelle').value.trim();
+      var lad = document.getElementById('log-ladung').value.trim();
+      var str = document.getElementById('log-strecke').value.trim();
+      var sof = document.getElementById('log-sofort-kalender').checked;
+
+      if (!dat || !bau || !fz) return alert('Bitte mindestens Datum, Fahrzeug und Baustelle angeben.');
+      schliesseLogistikModal();
+      meldung('⏳ Plane Logistik-Tour & prüfe Fahrzeugbelegung...');
+      callBackend('speichereLogistikTourImCockpit', [dat, tag, fz, fa, zf, bau, lad, str, sof], function(res) {
+        meldung(res);
+        laden(true);
+      });
+    }
+
+    function avInMontagUebernehmen(projekt, beschreibung) {
+      meldung('⏳ Lade AV-Material & LV-Positionen für ' + projekt + '...');
+      callBackend('holeAvDetailsZuProjekt', [projekt], function(av) {
+        oeffneAuftragModal(
+          0,
+          '',
+          'Mo',
+          'Kolonne 1 (Philipp/Frank)',
+          projekt,
+          av.auftrag || beschreibung,
+          av.material || 'Transporter: '
+        );
+      });
+    }
+
+    function projektInfoBearbeiten(projektName, aktuelleInfo) {
+      var neu = prompt("Kurze Projektbeschreibung (2 Sätze) für '" + projektName + "':", aktuelleInfo || "");
+      if (neu === null) return;
+      meldung('⏳ Speichere Projektbeschreibung...');
+      callBackend('speichereProjektKurzbeschreibungImCockpit', [projektName, neu], function(res) {
+        meldung(res);
+        laden(true);
+      });
+    }
+
+    function masterSheetOeffnen(projektNr, projektName) {
+      meldung('⏳ Suche Master-Sheet für ' + (projektNr || projektName) + '...');
+      callBackend('oeffneMasterSheetFuerRechnung', [projektNr, projektName], function(url) {
+        window.open(url, '_blank');
+      }, function(err) {
+        alert(err.message);
+      });
+    }
+
+    function pdfAusSheetNeuErstellen(rowIndex, reNr, projektNr, projektName) {
+      meldung('⏳ Lade Rechnungspositionen für RE ' + reNr + '...');
+      callBackend('ladeRechnungsPositionenFuerMaske', [projektNr, projektName], function(res) {
+        document.getElementById('re-mod-titel').innerText = '✏️ RE ' + reNr + ' (' + (projektNr || projektName) + ') bearbeiten';
+        document.getElementById('re-mod-sheet-link').href = res.sheetUrl || '#';
+        document.getElementById('re-mod-row').value = rowIndex;
+        document.getElementById('re-mod-renr').value = reNr;
+        document.getElementById('re-mod-pnr').value = projektNr;
+        document.getElementById('re-mod-pname').value = projektName;
+        document.getElementById('re-mod-colm').value = res.colMenge;
+        document.getElementById('re-mod-colep').value = res.colEp;
+        document.getElementById('re-mod-colgp').value = res.colGp;
+
+        var tbody = document.getElementById('re-mod-tbody');
+        tbody.innerHTML = (res.positionen || []).map(function(p) {
+          return '<tr data-row="' + p.row + '">' +
+            '<td><b>' + p.pos + '</b></td>' +
+            '<td>' + p.text + '</td>' +
+            '<td><input type="number" step="0.01" class="re-inp-menge" value="' + p.menge + '" oninput="berechneRechnungModalLive()" style="width:85px; padding:6px; border:1px solid #cbd5e1; border-radius:6px; font-weight:bold;"></td>' +
+            '<td>' + p.einheit + '</td>' +
+            '<td><input type="number" step="0.01" class="re-inp-ep" value="' + p.ep + '" oninput="berechneRechnungModalLive()" style="width:95px; padding:6px; border:1px solid #cbd5e1; border-radius:6px;"></td>' +
+            '<td class="re-cell-gp" style="text-align:right; font-weight:bold;">0,00 €</td>' +
+            '</tr>';
+        }).join('');
+
+        berechneRechnungModalLive();
+        document.getElementById('rechnung-modal').classList.remove('hidden');
+      }, function(err) {
+        alert('Fehler beim Laden der Positionen: ' + err.message);
+      });
+    }
+
+    function berechneRechnungModalLive() {
+      var netto = 0;
+      document.querySelectorAll('#re-mod-tbody tr').forEach(function(tr) {
+        var m = parseFloat(tr.querySelector('.re-inp-menge').value) || 0;
+        var ep = parseFloat(tr.querySelector('.re-inp-ep').value) || 0;
+        var gp = Math.round(m * ep * 100) / 100;
+        netto += gp;
+        tr.querySelector('.re-cell-gp').innerText = gp.toFixed(2).replace('.', ',') + ' €';
+      });
+      var steuer = Number(document.getElementById('re-mod-steuer').value);
+      var mwst = steuer === 0 ? 0 : Math.round(netto * 0.19 * 100) / 100;
+      var brutto = Math.round((netto + mwst) * 100) / 100;
+
+      document.getElementById('re-mod-netto').innerText = netto.toFixed(2).replace('.', ',') + ' €';
+      document.getElementById('re-mod-mwst').innerText = mwst.toFixed(2).replace('.', ',') + ' €';
+      document.getElementById('re-mod-brutto').innerText = brutto.toFixed(2).replace('.', ',') + ' €';
+    }
+
+    function schliesseRechnungModal() {
+      document.getElementById('rechnung-modal').classList.add('hidden');
+    }
+
+    function speichereRechnungAusModal() {
+      var rowIndex = Number(document.getElementById('re-mod-row').value);
+      var reNr = document.getElementById('re-mod-renr').value;
+      var projektNr = document.getElementById('re-mod-pnr').value;
+      var projektName = document.getElementById('re-mod-pname').value;
+      var colMenge = Number(document.getElementById('re-mod-colm').value);
+      var colEp = Number(document.getElementById('re-mod-colep').value);
+      var colGp = Number(document.getElementById('re-mod-colgp').value);
+      var steuerSatz = Number(document.getElementById('re-mod-steuer').value);
+
+      var positionen = [];
+      document.querySelectorAll('#re-mod-tbody tr').forEach(function(tr) {
+        positionen.push({
+          row: Number(tr.getAttribute('data-row')),
+          menge: parseFloat(tr.querySelector('.re-inp-menge').value) || 0,
+          ep: parseFloat(tr.querySelector('.re-inp-ep').value) || 0
+        });
+      });
+
+      schliesseRechnungModal();
+      meldung('⏳ Speichere Änderungen, setze Rechenformeln & erzeuge neues PDF...');
+      callBackend('speichereRechnungsMaskeUndErzeugePdf', [rowIndex, reNr, projektNr, projektName, colMenge, colEp, colGp, positionen, steuerSatz], function(res) {
+        meldung(res.meldung);
+        if (res.pdfUrl) window.open(res.pdfUrl, '_blank');
+        laden(true);
+      }, function(err) {
+        alert('Fehler beim Speichern / PDF-Export: ' + err.message);
+      });
+    }
+
+    function rechnungAnFastBill(rowIndex, reNr, projektNr, projektName) {
+      if (!confirm("Rechnung " + reNr + " (" + (projektNr || projektName) + ") jetzt geprüft inkl. Aufmaß-PDF als Entwurf an FastBill Plus übergeben?")) return;
+      meldung('📤 Übergebe Rechnung ' + reNr + ' & VOB-Aufmaß-PDF an FastBill Plus...');
+      callBackend('kalleKasseAnFastBillUebergeben', [rowIndex, reNr, projektNr, projektName], function(res) {
+        meldung(res.meldung);
+        laden(true);
+      }, function(err) {
+        alert('Fehler bei FastBill-Übergabe: ' + err.message);
+      });
+    }
+
+    function rechnungAusModalAnFastBill() {
+      var rowIndex = Number(document.getElementById('re-mod-row').value);
+      var reNr = document.getElementById('re-mod-renr').value;
+      var projektNr = document.getElementById('re-mod-pnr').value;
+      var projektName = document.getElementById('re-mod-pname').value;
+      schliesseRechnungModal();
+      rechnungAnFastBill(rowIndex, reNr, projektNr, projektName);
+    }
+
+    function kalleRegelBeibringen() {
+      var bereich = prompt("Bereich / Baustelle (z. B. Pflasterbau, Asphalt, Sprache/Abkürzung, Allgemein):", "Allgemein");
+      if (bereich === null) return;
+      var regel = prompt("Was soll Kalle-Bau ab sofort für jede künftige Planung lernen?\n(z. B. 'Bei Borde setzen immer Rückenstütze 0,045 m³/lfm + 10% rechnen' oder 'Kolonne 1 macht Pflaster'):", "");
+      if (!regel) return;
+      meldung('🧠 Speichere neue Lernerfahrung in Kalles Lernbuch...');
+      callBackend('speichereManuelleLernregelImCockpit', [bereich, regel], function(res) {
+        meldung(res);
+      });
+    }
+
+    function zeigeTageszeitBegruessung(name) {
+      var h = new Date().getHours();
+      var gruss = h < 11 ? "Guten Morgen" : (h < 14 ? "Mahlzeit" : (h < 18 ? "Guten Tag" : "Guten Abend"));
+      var wer = name ? (" " + name) : "";
+      var el = document.getElementById("cockpit-begruessung");
+      if (el) {
+        el.innerText = "👋 " + gruss + wer + ", schön, dass du da bist!";
+      }
+    }
+
+    zeigeTageszeitBegruessung("");
+    callBackend('holeAktuellenCockpitBenutzer', [], zeigeTageszeitBegruessung);
+    laden();
+  </script>
+</body>
+</html>

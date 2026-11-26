@@ -639,6 +639,37 @@
       </div>
     </div>
   </div>
+  <!-- MODAL: GEMINI-ANGEBOT PER DROPDOWN IN KALLE KALK / AV ÜBERNEHMEN -->
+  <div id="gemini-angebot-modal" class="hidden" style="position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:225; display:flex; align-items:center; justify-content:center; padding:12px;">
+    <div style="background:#fff; border-radius:12px; max-width:560px; width:100%; padding:18px; box-shadow:0 12px 32px rgba(0,0,0,0.3); border-top: 5px solid #16a34a;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:12px;">
+        <h3 style="margin:0; font-size:16px;">📥 Gemini-Angebot → PDF & Kalle Kalk/AV</h3>
+        <button class="btn btn-gray" style="padding:4px 10px; min-height:30px;" onclick="document.getElementById('gemini-angebot-modal').classList.add('hidden')">✖</button>
+      </div>
+
+      <div style="margin-bottom:10px;">
+        <label style="display:block; font-size:12px; font-weight:bold; color:#475569; margin-bottom:4px;">1. Ziel-Projektordner auswählen *</label>
+        <select id="gem-ang-projekt" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px;"></select>
+      </div>
+
+      <div style="margin-bottom:10px;">
+        <label style="display:block; font-size:12px; font-weight:bold; color:#475569; margin-bottom:4px;">2. Google Doc aus „Meine Ablage“ wählen *</label>
+        <select id="gem-ang-doc" onchange="geminiDocGewaehlt()" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px;">
+          <option value="">⏳ Lade neueste Dokumente...</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block; font-size:12px; font-weight:bold; color:#475569; margin-bottom:4px;">3. Netto-Angebotssumme (€)</label>
+        <input type="text" id="gem-ang-netto" placeholder="wird automatisch aus dem Doc gezogen..." style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px;">
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn btn-gray" onclick="document.getElementById('gemini-angebot-modal').classList.add('hidden')">Abbrechen</button>
+        <button class="btn btn-green" onclick="geminiAngebotJetztUebernehmen()">🚀 PDF erzeugen & an Kalle Kalk übergeben</button>
+      </div>
+    </div>
+  </div>
   <div id="toast"></div>
 
   <script>
@@ -1666,19 +1697,68 @@
         meldung(res);
       });
     }
-     function geminiAngebotUebernehmenDialog() {
-   var projekt = prompt("Projektordner (z. B. 26-102_Groi_Spiel_ev):", "26-102_Groi_Spiel_ev");
-   if (!projekt) return;
-   var docRef = prompt("Google-Doc-Link oder Dokumentname aus Gemini:", "ANG-2026-102_26-102_Groi_Spiel_ev_Strasseneinlauf_V2");
-   if (!docRef) return;
-   var netto = prompt("Netto-Angebotssumme in €:", "1.213,00");
-   meldung("⏳ Erzeuge SK-Kopfbogen-PDF, AV & Eintrag in Auftrags_Zentrale...");
-   callBackend("uebernimmGeminiAngebotNachKalleKalk", [projekt, docRef, netto], function(res) {
-     meldung(res.meldung);
-     if (res.url) window.open(res.url, "_blank");
-     laden(true);
-   });
- }
+   var GEMINI_DOCS_CACHE = [];
+
+    function geminiAngebotUebernehmenDialog() {
+      var projSel = document.getElementById('gem-ang-projekt');
+      var opts = Array.from(document.querySelectorAll('.chk-projekt-14t')).map(function(cb) { return cb.value; });
+      projSel.innerHTML = opts.length > 0
+        ? opts.map(function(p) { return '<option value="' + p + '">' + p + '</option>'; }).join('')
+        : '<option value="">-- Kein Projektordner geladen --</option>';
+
+      var docSel = document.getElementById('gem-ang-doc');
+      docSel.innerHTML = '<option value="">⏳ Suche neueste Angebote in Meine Ablage...</option>';
+      document.getElementById('gem-ang-netto').value = '';
+      document.getElementById('gemini-angebot-modal').classList.remove('hidden');
+
+      callBackend('ladeAktuelleGeminiDocsAusMeineAblage', [], function(docs) {
+        GEMINI_DOCS_CACHE = docs || [];
+        if (GEMINI_DOCS_CACHE.length === 0) {
+          docSel.innerHTML = '<option value="">Keine Google Docs gefunden</option>';
+          return;
+        }
+        docSel.innerHTML = GEMINI_DOCS_CACHE.map(function(d, idx) {
+          return '<option value="' + idx + '">' + d.datum + ' · ' + d.name + '</option>';
+        }).join('');
+        geminiDocGewaehlt();
+      });
+    }
+
+    function geminiDocGewaehlt() {
+      var idx = Number(document.getElementById('gem-ang-doc').value);
+      var doc = GEMINI_DOCS_CACHE[idx];
+      if (!doc) return;
+      if (doc.nettoVorschlag) {
+        document.getElementById('gem-ang-netto').value = doc.nettoVorschlag;
+      }
+      var m = doc.name.match(/\b(\d{2}-\d{3})\b/);
+      if (m) {
+        var pSel = document.getElementById('gem-ang-projekt');
+        for (var i = 0; i < pSel.options.length; i++) {
+          if (pSel.options[i].value.indexOf(m[1]) !== -1) {
+            pSel.selectedIndex = i;
+            break;
+          }
+        }
+      }
+    }
+
+    function geminiAngebotJetztUebernehmen() {
+      var projekt = document.getElementById('gem-ang-projekt').value;
+      var idx = Number(document.getElementById('gem-ang-doc').value);
+      var doc = GEMINI_DOCS_CACHE[idx];
+      var netto = document.getElementById('gem-ang-netto').value.trim();
+
+      if (!projekt || !doc) return alert('Bitte Ziel-Projektordner und Dokument auswählen.');
+      document.getElementById('gemini-angebot-modal').classList.add('hidden');
+      meldung('⏳ Erzeuge SK-Kopfbogen-PDF, AV & Eintrag in Auftrags_Zentrale...');
+
+      callBackend('uebernimmGeminiAngebotNachKalleKalk', [projekt, doc.url, netto], function(res) {
+        meldung(res.meldung);
+        if (res.url) window.open(res.url, '_blank');
+        laden(true);
+      });
+    }
     function zeigeTageszeitBegruessung(name) {
       var h = new Date().getHours();
       var gruss = h < 11 ? "Guten Morgen" : (h < 14 ? "Mahlzeit" : (h < 18 ? "Guten Tag" : "Guten Abend"));

@@ -92,6 +92,9 @@
     .hidden { display: none !important; }
     #toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: #0f172a; color: #fff; padding: 13px 18px; border-radius: 10px; display: none; z-index: 999; max-width: 92vw; text-align: center; box-shadow: 0 6px 20px rgba(0,0,0,0.28); font-size: 13.5px; }
 
+    .sk-u-btn { flex: 1; padding: 11px 8px; border-radius: 8px; border: 2px solid #334155; background: #0f172a; color: #fff; font-weight: bold; font-size: 14px; cursor: pointer; transition: all 0.15s; }
+    .sk-u-btn.selected { border-color: #22c55e; background: #14532d; }
+
     @media (max-width: 950px) {
       .gen-grid, .kasse-grid { grid-template-columns: 1fr 1fr; }
       .dash-grid { grid-template-columns: 1fr; }
@@ -111,6 +114,29 @@
   </style>
 </head>
 <body>
+  <!-- === SK COCKPIT PIN-LOGIN OVERLAY === -->
+  <div id="sk-login-overlay" style="position:fixed;inset:0;background:rgba(15,23,42,0.97);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#1e293b;color:#fff;padding:26px 24px;border-radius:14px;width:100%;max-width:390px;box-shadow:0 20px 45px rgba(0,0,0,0.6);text-align:center;border-top:4px solid #f59e0b;">
+      <div style="font-size:20px;font-weight:bold;margin-bottom:4px;">SK Büro-Cockpit</div>
+      <div style="font-size:12.5px;color:#94a3b8;margin-bottom:18px;">Bitte Namen wählen &amp; persönliche PIN eingeben</div>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px;" id="sk-user-buttons">
+        <button type="button" onclick="selectSkUser('Tilo', this)" class="sk-u-btn selected" data-user="Tilo">Tilo</button>
+        <button type="button" onclick="selectSkUser('Sören', this)" class="sk-u-btn" data-user="Sören">Sören</button>
+        <button type="button" onclick="selectSkUser('Madeleine', this)" class="sk-u-btn" data-user="Madeleine">Madeleine</button>
+      </div>
+
+      <input id="sk-pin-input" type="password" inputmode="numeric" maxlength="6" placeholder="••••"
+             onkeydown="if(event.key==='Enter') submitSkLogin()"
+             style="width:100%;padding:12px;font-size:22px;letter-spacing:8px;text-align:center;border-radius:8px;border:1px solid #475569;background:#0f172a;color:#fff;margin-bottom:14px;">
+
+      <button type="button" onclick="submitSkLogin()" style="width:100%;padding:12px;border-radius:8px;border:none;background:#16a34a;color:#fff;font-size:15px;font-weight:bold;cursor:pointer;">
+        🔐 Anmelden
+      </button>
+      <div id="sk-login-error" style="color:#f87171;font-size:13px;margin-top:10px;min-height:18px;"></div>
+    </div>
+  </div>
+
   <header style="background-color: #1b2a4a; color: #ffffff; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 6px rgba(0,0,0,0.22); flex-wrap: wrap;">
     <div>
       <div style="font-size: 19px; font-weight: bold; letter-spacing: 0.4px; line-height: 1.25;">
@@ -225,7 +251,6 @@
 
     <!-- TAB: 2-WOCHEN-EINSATZPLANUNG, LOGISTIK & ARBEITSAUFTRÄGE -->
     <div id="tab-einsatzplan" class="hidden">
-      <!-- AV-VORLAGEN AUS 07_KALKULATION & 02_BERICHTE -->
       <div class="card" style="border-top: 4px solid #2563eb;">
         <div class="card-head">
           <h2>📐 Arbeitsvorbereitung (AV) – Kalkulierte Aufträge & Berichte übernehmen</h2>
@@ -325,7 +350,7 @@
       </div>
     </div>
 
-    <!-- MODAL 2: LOGISTIK / LKW-TOUR (ZENTRALE <-> KALENDER "TRANSPORT" <-> KALLE-BOX) -->
+    <!-- MODAL 2: LOGISTIK / LKW-TOUR -->
     <div id="logistik-modal" class="hidden" style="position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:205; display:flex; align-items:center; justify-content:center; padding:12px;">
       <div style="background:#fff; border-radius:12px; max-width:620px; width:100%; padding:18px; box-shadow:0 12px 32px rgba(0,0,0,0.3); max-height:92vh; overflow-y:auto; border-top: 5px solid #4338ca;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:12px;">
@@ -523,9 +548,9 @@
       <div class="card-head">
         <h2>📄 Angebote & Rechnungen versenden</h2>
         <div style="display:flex; gap:6px; flex-wrap:wrap;">
-       <button class="btn btn-green" onclick="geminiAngebotUebernehmenDialog()">📥 Gemini-Angebot → PDF & Kalle Kalk/AV</button>
-       <a id="lnk-uebergabe" class="btn btn-gray" href="#" target="_blank">📊 Auftrags-Zentrale</a>
-     </div>
+          <button class="btn btn-green" onclick="geminiAngebotUebernehmenDialog()">📥 Gemini-Angebot → PDF & Kalle Kalk/AV</button>
+          <a id="lnk-uebergabe" class="btn btn-gray" href="#" target="_blank">📊 Auftrags-Zentrale</a>
+        </div>
       </div>
       <div class="table-wrap"><table id="tbl-auftraege"></table></div>
     </div>
@@ -639,6 +664,7 @@
       </div>
     </div>
   </div>
+
   <!-- MODAL: GEMINI-ANGEBOT PER DROPDOWN IN KALLE KALK / AV ÜBERNEHMEN -->
   <div id="gemini-angebot-modal" class="hidden" style="position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:225; display:flex; align-items:center; justify-content:center; padding:12px;">
     <div style="background:#fff; border-radius:12px; max-width:560px; width:100%; padding:18px; box-shadow:0 12px 32px rgba(0,0,0,0.3); border-top: 5px solid #16a34a;">
@@ -675,12 +701,83 @@
   <script>
     const COCKPIT_API_URL = "https://script.google.com/macros/s/AKfycbyswXcqqVaSvVHXz6a-JieHvSGuPoNk4GMiSxRrEsrBEDGYY3-ozwICAZ5YTIYpdgD-/exec";
 
+    var SK_AUTH_USER = localStorage.getItem("sk_cockpit_user") || "Tilo";
+    var SK_AUTH_PIN  = localStorage.getItem("sk_cockpit_pin")  || "";
+
     var FARBEN = ['#2563eb', '#f59e0b', '#16a34a', '#8b5cf6', '#ef4444', '#06b6d4'];
     var AKTUELLE_PROJEKT_NR = '26-101';
     var AKTUELLE_RE_NR = '202611100';
     var WETTER_MAP = {};
     var BOX_WEBAPP_URL = '';
     var KASSE_TIMER = null;
+
+    function selectSkUser(name, btnEl) {
+      SK_AUTH_USER = name;
+      document.querySelectorAll(".sk-u-btn").forEach(function(b) {
+        b.classList.toggle("selected", b.getAttribute("data-user") === name);
+      });
+      var inp = document.getElementById("sk-pin-input");
+      if (inp) inp.focus();
+    }
+
+    function zeigeTageszeitBegruessung(name) {
+      var h = new Date().getHours();
+      var gruss = h < 11 ? "Guten Morgen" : (h < 14 ? "Mahlzeit" : (h < 18 ? "Guten Tag" : "Guten Abend"));
+      var wer = name ? (" " + name) : "";
+      var el = document.getElementById("cockpit-begruessung");
+      if (el) {
+        el.innerHTML = "👋 " + gruss + wer + ", schön, dass du da bist! " +
+          "<a href='#' onclick='logoutSkUser();return false;' style='margin-left:10px;font-size:11.5px;color:#93c5fd;text-decoration:underline;font-weight:normal;'>(Nutzer wechseln)</a>";
+      }
+    }
+
+    function logoutSkUser() {
+      localStorage.removeItem("sk_cockpit_pin");
+      SK_AUTH_PIN = "";
+      document.getElementById("sk-pin-input").value = "";
+      document.getElementById("sk-login-error").innerText = "";
+      document.getElementById("sk-login-overlay").style.display = "flex";
+    }
+
+    function submitSkLogin(silentMode) {
+      var pinInp = document.getElementById("sk-pin-input");
+      var pin = silentMode ? SK_AUTH_PIN : (pinInp ? pinInp.value.trim() : "");
+      var errEl = document.getElementById("sk-login-error");
+
+      if (!pin) {
+        if (!silentMode && errEl) errEl.innerText = "Bitte PIN eingeben.";
+        return;
+      }
+      if (!silentMode && errEl) errEl.innerText = "⏳ Prüfe PIN...";
+
+      fetch(COCKPIT_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          fn: 'pruefeCockpitPin',
+          args: [SK_AUTH_USER, pin]
+        })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data || !data.ok) {
+          throw new Error((data && data.error) || "Ungültige PIN.");
+        }
+        SK_AUTH_PIN = pin;
+        localStorage.setItem("sk_cockpit_user", SK_AUTH_USER);
+        localStorage.setItem("sk_cockpit_pin", pin);
+        document.getElementById("sk-login-overlay").style.display = "none";
+        if (errEl) errEl.innerText = "";
+        zeigeTageszeitBegruessung(SK_AUTH_USER);
+        laden(false);
+      })
+      .catch(function(err) {
+        localStorage.removeItem("sk_cockpit_pin");
+        SK_AUTH_PIN = "";
+        document.getElementById("sk-login-overlay").style.display = "flex";
+        if (!silentMode && errEl) errEl.innerText = "❌ " + err.message;
+      });
+    }
 
     function callBackend(fnName, args, onSuccess, onError) {
       if (typeof google !== 'undefined' && google.script && google.script.run) {
@@ -693,7 +790,12 @@
       fetch(COCKPIT_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ fn: fnName, args: args || [] })
+        body: JSON.stringify({
+          fn: fnName,
+          args: args || [],
+          authUser: SK_AUTH_USER,
+          authPin: SK_AUTH_PIN
+        })
       })
       .then(function(r) { return r.json(); })
       .then(function(data) {
@@ -873,7 +975,7 @@
         .replace(/\bStraße\b/gi, 'Str.');
       var gewerk = document.getElementById('gen-gewerk').value.trim();
 
-     var roh = [AKTUELLE_PROJEKT_NR, ort, kunde, gewerk]
+      var roh = [AKTUELLE_PROJEKT_NR, ort, kunde, gewerk]
         .filter(Boolean)
         .join("_")
         .replace(/\s+/g, "_")
@@ -1697,7 +1799,8 @@
         meldung(res);
       });
     }
-   var GEMINI_DOCS_CACHE = [];
+
+    var GEMINI_DOCS_CACHE = [];
 
     function geminiAngebotUebernehmenDialog() {
       var projSel = document.getElementById('gem-ang-projekt');
@@ -1759,19 +1862,13 @@
         laden(true);
       });
     }
-    function zeigeTageszeitBegruessung(name) {
-      var h = new Date().getHours();
-      var gruss = h < 11 ? "Guten Morgen" : (h < 14 ? "Mahlzeit" : (h < 18 ? "Guten Tag" : "Guten Abend"));
-      var wer = name ? (" " + name) : "";
-      var el = document.getElementById("cockpit-begruessung");
-      if (el) {
-        el.innerText = "👋 " + gruss + wer + ", schön, dass du da bist!";
-      }
-    }
 
-    zeigeTageszeitBegruessung("");
-    callBackend('holeAktuellenCockpitBenutzer', [], zeigeTageszeitBegruessung);
-    laden();
+    // Start: Gespeicherten Nutzer vorauswählen & prüfen, ob gültige PIN hinterlegt ist
+    selectSkUser(SK_AUTH_USER);
+    zeigeTageszeitBegruessung(SK_AUTH_PIN ? SK_AUTH_USER : "");
+    if (SK_AUTH_PIN) {
+      submitSkLogin(true);
+    }
   </script>
 </body>
 </html>
